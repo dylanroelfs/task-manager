@@ -4,6 +4,7 @@ import { useId, useRef, useState, useTransition } from "react";
 import { createSection, deleteSection } from "@/lib/actions/projects";
 import type { Section } from "@/lib/tasks";
 import { CloseIcon, PlusIcon } from "./icons";
+import { useBackdropClose } from "./use-backdrop-close";
 
 /** Knop met popup: naam invullen, bestaande onderdelen als tags ernaast ter controle. */
 export function NewSectionButton({ projectId, sections }: { projectId: string; sections: Section[] }) {
@@ -22,6 +23,8 @@ export function NewSectionButton({ projectId, sections }: { projectId: string; s
   function close() {
     dialogRef.current?.close();
   }
+
+  const backdrop = useBackdropClose(close);
 
   // Popup blijft open na toevoegen: de nieuwe tag verschijnt en je kunt meteen de volgende typen
   function save(e: React.FormEvent) {
@@ -52,8 +55,8 @@ export function NewSectionButton({ projectId, sections }: { projectId: string; s
           setName("");
           setError(null);
         }}
-        // Klik op de achtergrond sluit de popup
-        onClick={(e) => e.target === e.currentTarget && close()}
+        // Klik op de achtergrond sluit de popup (niet bij tekst selecteren en buiten loslaten)
+        {...backdrop}
         className="m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl border border-line bg-surface p-0 text-ink shadow-2xl shadow-black/20 backdrop:bg-black/40 backdrop:backdrop-blur-[2px]"
       >
         <form onSubmit={save} className="p-5">

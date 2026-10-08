@@ -6,6 +6,7 @@ import type { TaskStatus } from "@/lib/supabase/database.types";
 import { TASK_STATUSES } from "@/lib/task-status";
 import type { Member, Project, Section, TaskItemData } from "@/lib/tasks";
 import { CheckIcon, CloseIcon, TrashIcon } from "./icons";
+import { useBackdropClose } from "./use-backdrop-close";
 
 const fieldClass =
   "h-10 w-full min-w-0 rounded-lg border border-line bg-surface px-3 text-sm outline-none focus:border-accent focus:ring-4 focus:ring-accent-soft";
@@ -69,6 +70,8 @@ export function TaskDialog(props: CreateProps | EditProps) {
     dialogRef.current?.close();
   }
 
+  const backdrop = useBackdropClose(close);
+
   function save(formData: FormData) {
     startSaving(async () => {
       const result = task ? await updateTask(task.id, formData) : await createTask(formData);
@@ -86,8 +89,8 @@ export function TaskDialog(props: CreateProps | EditProps) {
         formRef.current?.reset();
         setError(null);
       }}
-      // Klik op de achtergrond sluit de popup
-      onClick={(e) => e.target === e.currentTarget && close()}
+      // Klik op de achtergrond sluit de popup (niet bij tekst selecteren en buiten loslaten)
+      {...backdrop}
       className="m-auto w-[calc(100%-2rem)] max-w-lg rounded-2xl border border-line bg-surface p-0 text-ink shadow-2xl shadow-black/20 backdrop:bg-black/40 backdrop:backdrop-blur-[2px]"
     >
       <form
@@ -137,7 +140,7 @@ export function TaskDialog(props: CreateProps | EditProps) {
           <textarea
             name="description"
             maxLength={2000}
-            rows={3}
+            rows={6}
             defaultValue={values.description}
             placeholder="Beschrijving (optioneel)"
             aria-label="Beschrijving"
