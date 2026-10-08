@@ -4,8 +4,6 @@
 
 import type { ProjectColor } from "../project-colors";
 
-export type TaskPriority = "low" | "medium" | "high";
-
 export type TaskStatus = "todo" | "in_progress" | "done";
 
 export type Database = {
@@ -19,8 +17,11 @@ export type Database = {
           assignee_id: string | null;
           title: string;
           description: string | null;
-          priority: TaskPriority;
+          /** Onderdeel binnen het project (sections), hoort bij hetzelfde project. */
+          section_id: string | null;
           due_date: string | null;
+          /** HH:MM:SS, alleen samen met due_date. */
+          due_time: string | null;
           status: TaskStatus;
           /** Afgeleid van status door een trigger. */
           done: boolean;
@@ -34,8 +35,9 @@ export type Database = {
           assignee_id?: string | null;
           title: string;
           description?: string | null;
-          priority?: TaskPriority;
+          section_id?: string | null;
           due_date?: string | null;
+          due_time?: string | null;
           status?: TaskStatus;
           created_at?: string;
         };
@@ -44,8 +46,9 @@ export type Database = {
           assignee_id?: string | null;
           title?: string;
           description?: string | null;
-          priority?: TaskPriority;
+          section_id?: string | null;
           due_date?: string | null;
+          due_time?: string | null;
           status?: TaskStatus;
         };
         Relationships: [];
@@ -63,13 +66,14 @@ export type Database = {
         Update: { name?: string; color?: ProjectColor };
         Relationships: [];
       };
-    };
-    Views: {
-      projects_with_counts: {
-        Row: { id: string; name: string; color: ProjectColor; created_at: string; open_count: number };
+      sections: {
+        Row: { id: string; project_id: string; user_id: string; name: string; created_at: string };
+        Insert: { id?: string; project_id: string; user_id?: string; name: string; created_at?: string };
+        Update: { name?: string };
         Relationships: [];
       };
     };
+    Views: Record<never, never>;
     Functions: Record<never, never>;
     Enums: Record<never, never>;
     CompositeTypes: Record<never, never>;

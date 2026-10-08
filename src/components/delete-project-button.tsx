@@ -8,7 +8,7 @@ export function DeleteProjectButton({ id, name }: { id: string; name: string }) 
   const [pending, startTransition] = useTransition();
 
   function onClick() {
-    if (!confirm(`Project "${name}" verwijderen? De taken blijven bestaan, zonder project.`)) return;
+    if (!confirm(`Weet je zeker dat je het project "${name}" wilt verwijderen? De taken blijven bestaan, zonder project.`)) return;
     startTransition(() => deleteProject(id));
   }
 

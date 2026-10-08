@@ -7,16 +7,18 @@ import { logout } from "@/lib/actions/auth";
 import { createProject } from "@/lib/actions/projects";
 import type { CurrentUser } from "@/lib/auth";
 import type { Project } from "@/lib/tasks";
-import { CheckCircleIcon, CloseIcon, ListIcon, LogoutIcon, MenuIcon, PlusIcon } from "./icons";
+import { CheckCircleIcon, CloseIcon, HomeIcon, ListIcon, LogoutIcon, MenuIcon, PlusIcon } from "./icons";
 import { ProjectDot } from "./project-dot";
 
 export function Sidebar({
   user,
   openCount,
+  doneCount,
   projects,
 }: {
   user: CurrentUser | null;
   openCount: number;
+  doneCount: number;
   projects: Project[];
 }) {
   const pathname = usePathname();
@@ -24,8 +26,9 @@ export function Sidebar({
   const [open, setOpen] = useState(false);
 
   const nav = [
-    { href: "/", label: "Mijn taken", icon: ListIcon, count: openCount },
-    { href: "/afgerond", label: "Afgerond", icon: CheckCircleIcon },
+    { href: "/", label: "Home", icon: HomeIcon, count: undefined },
+    { href: "/open", label: "Open taken", icon: ListIcon, count: openCount },
+    { href: "/afgerond", label: "Afgeronde taken", icon: CheckCircleIcon, count: doneCount },
   ];
 
   return (
@@ -56,7 +59,7 @@ export function Sidebar({
             <span className="grid h-8 w-8 place-items-center rounded-lg bg-ink text-surface">
               <CheckCircleIcon width={17} height={17} />
             </span>
-            <span className="text-[15px] font-semibold tracking-tight">Mijn Taken</span>
+            <span className="text-[15px] font-semibold tracking-tight">Task Manager</span>
           </Link>
           <button
             type="button"

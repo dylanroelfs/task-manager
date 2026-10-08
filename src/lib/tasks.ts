@@ -3,7 +3,7 @@ import { cache } from "react";
 import { getCurrentUser } from "./auth";
 import { displayName, initialsOf } from "./names";
 import { createClient } from "./supabase/server";
-import type { TaskPriority, TaskStatus } from "./supabase/database.types";
+import type { TaskStatus } from "./supabase/database.types";
 import type { ProjectColor } from "./project-colors";
 
 export type TaskView = "open" | "done";
@@ -12,14 +12,20 @@ export type TaskItemData = {
   id: string;
   title: string;
   description: string | null;
-  priority: TaskPriority;
+  sectionId: string | null;
+  /** Naam van het onderdeel, bijv. "AVN-1" of "Bugfix". */
+  section: string | null;
   status: TaskStatus;
   done: boolean;
   projectId: string | null;
   assigneeId: string | null;
   dueDate: string | null;
+  /** HH:MM, optioneel naast de datum. */
+  dueTime: string | null;
   dueLabel: string | null;
   overdue: boolean;
+  /** Datum van afronden als DD-MM-YYYY, alleen bij afgeronde taken. */
+  doneLabel: string | null;
   /** Alleen de eigenaar mag bewerken; een medewerker mag alleen afvinken. */
   isOwner: boolean;
   ownerName: string;
@@ -27,11 +33,20 @@ export type TaskItemData = {
   foreignProject: { name: string; color: ProjectColor } | null;
 };
 
-export type Project = { id: string; name: string; color: ProjectColor; openCount: number };
+export type Project = {
+  id: string;
+  name: string;
+  color: ProjectColor;
+  /** Onderdelen in volgorde van aanmaken, bijv. AVN-1 en Bugfix. */
+  sections: Section[];
+  openCount: number;
+  doneCount: number;
+};
+
+export type Section = { id: string; name: string };
 
 export type Member = { id: string; name: string; email: string; initials: string };
 
-const MONTHS = ["jan", "feb", "mrt", "apr", "mei", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
 const TIME_ZONE = "Europe/Amsterdam";
 
 /** Vandaag als YYYY-MM-DD in Nederlandse tijd. */
@@ -42,30 +57,33 @@ export function todayISO(offsetDays = 0) {
 
 export async function getTasks(
   view: TaskView,
-  filter: { projectId?: string; assigneeId?: string } = {},
+  filter: { projectId?: string; assigneeId?: string; limit?: number } = {},
 ): Promise<TaskItemData[]> {
-  const { projectId, assigneeId } = filter;
+  // limit geldt alleen voor afgeronde taken; zoeken op Home haalt er meer op
+  const { projectId, assigneeId, limit = 100 } = filter;
   const supabase = await createClient();
   const today = todayISO();
 
   let query = supabase
     .from("tasks")
-    .select("id, title, description, priority, status, done, due_date, project_id, assignee_id, user_id");
+    .select("id, title, description, section_id, status, done, due_date, due_time, completed_at, project_id, assignee_id, user_id");
   if (projectId) query = query.eq("project_id", projectId);
   if (assigneeId) query = query.eq("assignee_id", assigneeId);
   query =
     view === "done"
-      ? query.eq("done", true).order("completed_at", { ascending: false }).limit(100)
+      ? query.eq("done", true).order("completed_at", { ascending: false }).limit(limit)
       : query
           .eq("done", false)
           .order("due_date", { ascending: true, nullsFirst: false })
+          .order("due_time", { ascending: true, nullsFirst: false })
           .order("created_at", { ascending: true });
 
-  const [{ data, error }, user, members, ownProjects] = await Promise.all([
+  const [{ data, error }, user, members, ownProjects, sections] = await Promise.all([
     query,
     getCurrentUser(),
     getMembers(),
     getProjects(),
+    getSections(),
   ]);
   if (error) throw new Error(`Supabase: ${error.message}`);
 
@@ -87,14 +105,17 @@ export async function getTasks(
     id: t.id,
     title: t.title,
     description: t.description,
-    priority: t.priority,
+    sectionId: t.section_id,
+    section: sections.find((s) => s.id === t.section_id)?.name ?? null,
     status: t.status,
     done: t.done,
     projectId: t.project_id,
     assigneeId: t.assignee_id,
     dueDate: t.due_date,
-    dueLabel: t.due_date ? dueLabel(t.due_date, today) : null,
+    dueTime: t.due_time?.slice(0, 5) ?? null,
+    dueLabel: t.due_date ? dueLabel(t.due_date, t.due_time) : null,
     overdue: !t.done && t.due_date !== null && t.due_date < today,
+    doneLabel: t.done && t.completed_at ? doneLabel(t.completed_at) : null,
     isOwner: t.user_id === user.id,
     ownerName: t.user_id === user.id ? user.name : nameOf(t.user_id),
     foreignProject: t.project_id ? (foreign.get(t.project_id) ?? null) : null,
@@ -114,41 +135,81 @@ export const getMembers = cache(async (): Promise<Member[]> => {
     .sort((a, b) => a.name.localeCompare(b.name, "nl"));
 });
 
+/** Eigen projecten met het aantal open en afgeronde taken (alleen taken die jij mag zien), oudste eerst. */
 export const getProjects = cache(async (): Promise<Project[]> => {
+  const [supabase, user] = await Promise.all([createClient(), getCurrentUser()]);
+  // Alleen eigen projecten: projecten van collega's zijn leesbaar, maar horen niet in jouw lijst
+  const [projects, tasks, sections] = await Promise.all([
+    supabase
+      .from("projects")
+      .select("id, name, color")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true }),
+    supabase.from("tasks").select("project_id, done").not("project_id", "is", null),
+    getSections(),
+  ]);
+  if (projects.error) throw new Error(`Supabase: ${projects.error.message}`);
+  if (tasks.error) throw new Error(`Supabase: ${tasks.error.message}`);
+
+  const counts = new Map<string, { open: number; done: number }>();
+  for (const t of tasks.data) {
+    if (!t.project_id) continue;
+    const c = counts.get(t.project_id) ?? { open: 0, done: 0 };
+    c[t.done ? "done" : "open"] += 1;
+    counts.set(t.project_id, c);
+  }
+  return projects.data.map((p) => ({
+    id: p.id,
+    name: p.name,
+    color: p.color,
+    sections: sections.filter((s) => s.projectId === p.id).map(({ id, name }) => ({ id, name })),
+    openCount: counts.get(p.id)?.open ?? 0,
+    doneCount: counts.get(p.id)?.done ?? 0,
+  }));
+});
+
+/** Eigen onderdelen, plus die van taken die aan jou zijn toegewezen (RLS). Oudste eerst. */
+const getSections = cache(async () => {
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("projects_with_counts")
-    .select("id, name, color, open_count")
+    .from("sections")
+    .select("id, project_id, name")
     .order("created_at", { ascending: true });
   if (error) throw new Error(`Supabase: ${error.message}`);
-  return data.map((p) => ({ id: p.id, name: p.name, color: p.color, openCount: p.open_count }));
+  return data.map((s) => ({ id: s.id, projectId: s.project_id, name: s.name }));
 });
 
 /** Tellers voor "Mijn taken": alleen taken waar jij de medewerker bent. */
 export const getTaskCounts = cache(async () => {
   const [supabase, user] = await Promise.all([createClient(), getCurrentUser()]);
   const today = todayISO();
-  const weekAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
   const count = () =>
     supabase.from("tasks").select("id", { count: "exact", head: true }).eq("assignee_id", user.id);
 
   const results = await Promise.all([
     count().eq("done", false),
     count().eq("done", false).lte("due_date", today),
-    count().eq("done", false).lt("due_date", today),
-    count().eq("done", true).gte("completed_at", weekAgo),
+    count().eq("done", true),
   ]);
   for (const r of results) if (r.error) throw new Error(`Supabase: ${r.error.message}`);
 
-  const [open, dueToday, overdue, doneThisWeek] = results.map((r) => r.count ?? 0);
-  return { open, dueToday, overdue, doneThisWeek };
+  // dueToday: open taken voor vandaag of eerder (de begroeting bovenaan)
+  const [open, dueToday, done] = results.map((r) => r.count ?? 0);
+  return { open, dueToday, done };
 });
 
-function dueLabel(due: string, today: string) {
-  if (due === today) return "Vandaag";
-  if (due === todayISO(1)) return "Morgen";
-  if (due === todayISO(-1)) return "Gisteren";
-  const [y, m, d] = due.split("-").map(Number);
-  const label = `${d} ${MONTHS[m - 1]}`;
-  return y === Number(today.slice(0, 4)) ? label : `${label} ${y}`;
+/** Tijdstip → DD-MM-YYYY in Nederlandse tijd. */
+function doneLabel(completedAt: string) {
+  return new Intl.DateTimeFormat("nl-NL", {
+    timeZone: TIME_ZONE,
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(new Date(completedAt));
+}
+
+/** YYYY-MM-DD (+ HH:MM:SS) → DD-MM-YYYY (HH:MM), bijv. 2026-10-08 14:30 → 08-10-2026 14:30. */
+function dueLabel(due: string, time: string | null) {
+  const [y, m, d] = due.split("-");
+  return time ? `${d}-${m}-${y} ${time.slice(0, 5)}` : `${d}-${m}-${y}`;
 }

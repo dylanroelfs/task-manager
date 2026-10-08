@@ -4,7 +4,7 @@ import { useId, useRef, useState, useTransition, type RefObject } from "react";
 import { createTask, updateTask } from "@/lib/actions/tasks";
 import type { TaskStatus } from "@/lib/supabase/database.types";
 import { TASK_STATUSES } from "@/lib/task-status";
-import type { Member, Project, TaskItemData } from "@/lib/tasks";
+import type { Member, Project, Section, TaskItemData } from "@/lib/tasks";
 import { CloseIcon, TrashIcon } from "./icons";
 
 const fieldClass =
@@ -27,7 +27,8 @@ type EditProps = Shared & {
   status: TaskStatus;
   projectId: string | null;
   onStatusChange: (status: TaskStatus) => void;
-  onDelete: () => void;
+  /** Vraagt zelf om bevestiging; true als de taak verwijderd wordt. */
+  onDelete: () => boolean;
 };
 
 /** Eén popup voor nieuwe taken en voor bewerken. */
@@ -42,16 +43,18 @@ export function TaskDialog(props: CreateProps | EditProps) {
           title: props.task.title,
           description: props.task.description ?? "",
           projectId: props.projectId ?? "",
-          priority: props.task.priority,
+          sectionId: props.task.sectionId ?? "",
           dueDate: props.task.dueDate ?? "",
+          dueTime: props.task.dueTime ?? "",
           assigneeId: props.task.assigneeId ?? "",
         }
       : {
           title: "",
           description: "",
           projectId: props.defaults.projectId ?? "",
-          priority: "medium" as const,
+          sectionId: "",
           dueDate: props.defaults.dueDate,
+          dueTime: "",
           assigneeId: props.defaults.assigneeId,
         };
 
@@ -139,33 +142,23 @@ export function TaskDialog(props: CreateProps | EditProps) {
           />
 
           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <label className="space-y-1.5">
-              <span className="text-xs text-ink-3">Project</span>
-              <select name="project_id" defaultValue={values.projectId} className={fieldClass}>
-                <option value="">Geen project</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-                {task?.foreignProject && values.projectId && (
-                  <option value={values.projectId}>{task.foreignProject.name}</option>
-                )}
-              </select>
-            </label>
-            <label className="space-y-1.5">
-              <span className="text-xs text-ink-3">Prioriteit</span>
-              <select name="priority" defaultValue={values.priority} className={fieldClass}>
-                <option value="low">Laag</option>
-                <option value="medium">Normaal</option>
-                <option value="high">Hoog</option>
-              </select>
-            </label>
+            <ProjectSectionFields
+              projects={projects}
+              initialProjectId={values.projectId}
+              initialSection={
+                task?.sectionId && task.section ? { id: task.sectionId, name: task.section } : null
+              }
+              foreignProjectName={task?.foreignProject?.name}
+            />
             <label className="space-y-1.5">
               <span className="text-xs text-ink-3">Datum</span>
               <input type="date" name="due_date" defaultValue={values.dueDate} className={fieldClass} />
             </label>
             <label className="space-y-1.5">
+              <span className="text-xs text-ink-3">Tijd (optioneel)</span>
+              <input type="time" name="due_time" defaultValue={values.dueTime} className={fieldClass} />
+            </label>
+            <label className="space-y-1.5 sm:col-span-2">
               <span className="text-xs text-ink-3">Medewerker</span>
               <select name="assignee_id" defaultValue={values.assigneeId} className={fieldClass}>
                 <option value="">Niemand</option>
@@ -223,9 +216,7 @@ export function TaskDialog(props: CreateProps | EditProps) {
                 <button
                   type="button"
                   onClick={() => {
-                    if (!confirm("Deze taak verwijderen?")) return;
-                    close();
-                    props.onDelete();
+                    if (props.onDelete()) close();
                   }}
                   aria-label="Taak verwijderen"
                   className="grid h-9 w-9 place-items-center rounded-lg border border-line text-ink-3 hover:border-bad/40 hover:text-bad"
@@ -256,5 +247,71 @@ export function TaskDialog(props: CreateProps | EditProps) {
         </div>
       </form>
     </dialog>
+  );
+}
+
+/**
+ * Project en onderdeel: het onderdeel-veld toont de onderdelen van het gekozen project.
+ * Staat binnen het formulier, dus de nieuwe key bij reset zet ook deze state terug.
+ */
+function ProjectSectionFields({
+  projects,
+  initialProjectId,
+  initialSection,
+  foreignProjectName,
+}: {
+  projects: Project[];
+  initialProjectId: string;
+  /** Onderdeel van de taak; ook kiesbaar als het bij een project van een ander hoort. */
+  initialSection: Section | null;
+  foreignProjectName?: string;
+}) {
+  const [projectId, setProjectId] = useState(initialProjectId);
+  const sameProject = projectId === initialProjectId;
+  const options = [...(projects.find((p) => p.id === projectId)?.sections ?? [])];
+  if (sameProject && initialSection && !options.some((s) => s.id === initialSection.id))
+    options.push(initialSection);
+
+  return (
+    <>
+      <label className="space-y-1.5">
+        <span className="text-xs text-ink-3">Project</span>
+        <select
+          name="project_id"
+          value={projectId}
+          onChange={(e) => setProjectId(e.target.value)}
+          className={fieldClass}
+        >
+          <option value="">Geen project</option>
+          {projects.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+          {foreignProjectName && initialProjectId && (
+            <option value={initialProjectId}>{foreignProjectName}</option>
+          )}
+        </select>
+      </label>
+      <label className="space-y-1.5">
+        <span className="text-xs text-ink-3">Onderdeel</span>
+        <select
+          name="section_id"
+          // Ander project gekozen: het oude onderdeel past niet meer
+          key={projectId}
+          defaultValue={sameProject ? (initialSection?.id ?? "") : ""}
+          className={fieldClass}
+        >
+          <option value="">
+            {!projectId ? "Kies eerst een project" : options.length ? "Geen onderdeel" : "Nog geen onderdelen"}
+          </option>
+          {options.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+      </label>
+    </>
   );
 }

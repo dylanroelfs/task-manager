@@ -3,7 +3,7 @@ import { CheckCircleIcon } from "@/components/icons";
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = {
-  title: "Inloggen · Taken",
+  title: "Inloggen · Task Manager",
 };
 
 export default function LoginPage() {

@@ -32,3 +32,28 @@ export async function deleteProject(id: string) {
   revalidatePath("/", "layout");
   redirect("/");
 }
+
+/** Geeft een foutmelding terug, of null als het gelukt is. */
+export async function createSection(projectId: string, rawName: string): Promise<string | null> {
+  if (!UUID.test(projectId)) return "Ongeldig project.";
+  const name = rawName.trim();
+  if (!name) return "Geef het onderdeel een naam.";
+  if (name.length > 60) return "De naam mag maximaal 60 tekens zijn.";
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("sections").insert({ project_id: projectId, name });
+  // 23505: unieke index op (project, naam)
+  if (error) return error.code === "23505" ? "Dit onderdeel bestaat al." : "Onderdeel aanmaken is niet gelukt.";
+
+  revalidatePath("/", "layout");
+  return null;
+}
+
+export async function deleteSection(id: string) {
+  if (!UUID.test(id)) return;
+  const supabase = await createClient();
+  // Taken blijven in het project; de database zet hun section_id op null.
+  const { error } = await supabase.from("sections").delete().eq("id", id);
+  if (error) throw new Error("Onderdeel verwijderen is niet gelukt.");
+  revalidatePath("/", "layout");
+}
