@@ -61,6 +61,8 @@ export function TaskDialog(props: CreateProps | EditProps) {
   const headingId = useId();
   const formRef = useRef<HTMLFormElement>(null);
   const [error, setError] = useState<string | null>(null);
+  // Telt elke reset (sluiten, en React na een form action), zodat het formulier opnieuw opbouwt
+  const [resets, setResets] = useState(0);
   const [saving, startSaving] = useTransition();
 
   function close() {
@@ -90,8 +92,11 @@ export function TaskDialog(props: CreateProps | EditProps) {
     >
       <form
         ref={formRef}
-        // Nieuwe key als de waarden van buiten veranderen, zodat de velden die tonen
-        key={Object.values(values).join("|")}
+        // Nieuwe key als de waarden van buiten veranderen, zodat de velden die tonen.
+        // Ook bij elke reset: form.reset() zet de gecontroleerde project-select in de browser
+        // op "Geen project" terwijl de state het project nog heeft; opslaan wiste dan het project.
+        key={`${Object.values(values).join("|")}|${resets}`}
+        onReset={() => setResets((n) => n + 1)}
         action={save}
         className="p-5"
       >
