@@ -1,13 +1,14 @@
-// Vaste volgorde: nieuwe projecten krijgen de volgende kleur in de rij.
+// Vaste volgorde: het 1e project is blauw, het 2e rood, het 3e groen, enz. Eerst de kleuren die het
+// meest van elkaar verschillen, zodat een paar projecten (ook in de grafiek) direct te onderscheiden zijn.
 export const PROJECT_COLORS = {
-  blue: "#2a78d6",
-  orange: "#eb6834",
-  aqua: "#1baf7a",
-  yellow: "#eda100",
-  magenta: "#e87ba4",
-  green: "#008300",
-  violet: "#7b6ae0",
-  red: "#e34948",
+  blue: "#2563eb",
+  red: "#dc2626",
+  green: "#16a34a",
+  orange: "#f97316",
+  violet: "#9333ea",
+  yellow: "#eab308",
+  aqua: "#06b6d4",
+  magenta: "#db2777",
 } as const;
 
 export type ProjectColor = keyof typeof PROJECT_COLORS;

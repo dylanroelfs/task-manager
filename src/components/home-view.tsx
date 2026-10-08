@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { getSupabaseEnv } from "@/lib/supabase/env";
-import { getMembers, getProjects, getTaskCounts, getTasks } from "@/lib/tasks";
+import { getCompletedPerDay, getMembers, getProjects, getTaskCounts, getTasks } from "@/lib/tasks";
+import { CompletedChart } from "./completed-chart";
+import { ProjectPie } from "./project-pie";
 import { CheckCircleIcon, ListIcon } from "./icons";
 import { TaskSearch } from "./task-search";
 import { SetupNotice } from "./tasks-view";
@@ -10,15 +12,17 @@ import { Topbar } from "./topbar";
 export async function HomeView() {
   if (!getSupabaseEnv()) return <SetupNotice />;
 
-  const [user, counts, projects, members, open, done] = await Promise.all([
+  const [user, counts, perDay, projects, members, open, done] = await Promise.all([
     getCurrentUser(),
     getTaskCounts(),
+    getCompletedPerDay(7),
     getProjects(),
     getMembers(),
     // Alle taken die je mag zien (eigen en aan jou toegewezen), voor het zoeken
     getTasks("open"),
     getTasks("done", { limit: 1000 }),
   ]);
+  const allTasks = [...open, ...done];
 
   return (
     <>
@@ -31,16 +35,28 @@ export async function HomeView() {
           <p className="mt-1 text-sm text-ink-2">
             {counts.open
               ? `Je hebt ${counts.open} open ${counts.open === 1 ? "taak" : "taken"}, waarvan ${
-                  counts.dueToday || "geen"
-                } voor vandaag.`
+                  counts.dueToday || "er geen"
+                } voor vandaag op de planning ${counts.dueToday === 1 ? "staat" : "staan"}.`
               : "Je hebt geen open taken."}
           </p>
         </div>
-        <section className="grid grid-cols-2 gap-3">
-          <StatLink href="/open" label="Open taken" value={counts.open} icon={<ListIcon />} />
-          <StatLink href="/afgerond" label="Afgeronde taken" value={counts.done} icon={<CheckCircleIcon />} />
-        </section>
-        <TaskSearch tasks={[...open, ...done]} projects={projects} members={members} />
+        {/* Kaarten, grafieken en zoeken: overal dezelfde tussenruimte van 0.5rem */}
+        <div className="space-y-2">
+          <section className="grid grid-cols-2 gap-2">
+            <StatLink href="/open" label="Open taken" value={counts.open} icon={<ListIcon />} />
+            <StatLink
+              href="/afgerond"
+              label="Afgeronde taken"
+              value={counts.done}
+              icon={<CheckCircleIcon />}
+            />
+          </section>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <CompletedChart days={perDay} />
+            <ProjectPie tasks={allTasks} projects={projects} />
+          </div>
+          <TaskSearch tasks={allTasks} projects={projects} members={members} />
+        </div>
       </main>
     </>
   );

@@ -80,6 +80,12 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Altijd ruimte voor de scrollbalk: anders schuift de pagina opzij zodra een lijst
+   (bijv. zoekresultaten) langer of korter wordt dan het scherm */
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   background: var(--page);
   color: var(--ink);

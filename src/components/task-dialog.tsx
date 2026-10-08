@@ -5,7 +5,7 @@ import { createTask, updateTask } from "@/lib/actions/tasks";
 import type { TaskStatus } from "@/lib/supabase/database.types";
 import { TASK_STATUSES } from "@/lib/task-status";
 import type { Member, Project, Section, TaskItemData } from "@/lib/tasks";
-import { CloseIcon, TrashIcon } from "./icons";
+import { CheckIcon, CloseIcon, TrashIcon } from "./icons";
 
 const fieldClass =
   "h-10 w-full min-w-0 rounded-lg border border-line bg-surface px-3 text-sm outline-none focus:border-accent focus:ring-4 focus:ring-accent-soft";
@@ -250,6 +250,14 @@ export function TaskDialog(props: CreateProps | EditProps) {
             )}
           </div>
         </div>
+
+        {/* Onder de statusknoppen, met een dunne lijn ertussen */}
+        {props.mode === "edit" && props.status === "done" && props.task.doneLabel && (
+          <p className="mt-4 flex items-center gap-1.5 border-t border-line pt-3 text-sm font-medium text-good">
+            <CheckIcon width={15} height={15} strokeWidth={2.5} />
+            Afgerond op {props.task.doneLabel}
+          </p>
+        )}
       </form>
     </dialog>
   );

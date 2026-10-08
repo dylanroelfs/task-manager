@@ -53,7 +53,7 @@ export function TaskSearch({
   });
 
   return (
-    <section className="space-y-3">
+    <section className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
         <label className="relative min-w-0 flex-1">
           <span className="pointer-events-none absolute inset-y-0 left-3 grid place-items-center text-ink-3">
@@ -104,10 +104,9 @@ export function TaskSearch({
       {words.length > 0 && (
         <>
           <p className="px-1 text-xs text-ink-3" aria-live="polite">
-            {results.length} {results.length === 1 ? "taak" : "taken"} gevonden voor &quot;
-            {deferredQuery.trim()}&quot;
+            {results.length} {results.length === 1 ? "resultaat" : "resultaten"} gevonden
           </p>
-          {results.length ? (
+          {results.length > 0 && (
             <div className="overflow-hidden rounded-2xl border border-line bg-surface">
               <ul className="divide-y divide-line">
                 {results.map((task) => (
@@ -115,10 +114,6 @@ export function TaskSearch({
                 ))}
               </ul>
             </div>
-          ) : (
-            <p className="rounded-2xl border border-line bg-surface px-4 py-12 text-center text-sm text-ink-3">
-              Geen taken gevonden.
-            </p>
           )}
         </>
       )}

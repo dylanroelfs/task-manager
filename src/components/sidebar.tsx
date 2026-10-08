@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useActionState, useState } from "react";
@@ -109,9 +110,19 @@ export function Sidebar({
 
         {user && (
           <div className="flex items-center gap-3 border-t border-line px-4 py-4">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent-soft text-sm font-medium text-accent">
-              {user.initials}
-            </span>
+            {user.avatarUrl ? (
+              <Image
+                src={user.avatarUrl}
+                alt=""
+                width={36}
+                height={36}
+                className="h-9 w-9 shrink-0 rounded-full object-cover"
+              />
+            ) : (
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent-soft text-sm font-medium text-accent">
+                {user.initials}
+              </span>
+            )}
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium">{user.name}</p>
               <p className="truncate text-xs text-ink-3">{user.email}</p>

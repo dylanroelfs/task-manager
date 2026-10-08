@@ -4,7 +4,7 @@ import { getCurrentUser } from "./auth";
 import { displayName, initialsOf } from "./names";
 import { createClient } from "./supabase/server";
 import type { TaskStatus } from "./supabase/database.types";
-import type { ProjectColor } from "./project-colors";
+import { PROJECT_COLOR_ORDER, type ProjectColor } from "./project-colors";
 
 export type TaskView = "open" | "done";
 
@@ -66,7 +66,9 @@ export async function getTasks(
 
   let query = supabase
     .from("tasks")
-    .select("id, title, description, section_id, status, done, due_date, due_time, completed_at, project_id, assignee_id, user_id");
+    .select(
+      "id, title, description, section_id, status, done, due_date, due_time, completed_at, project_id, assignee_id, user_id",
+    );
   if (projectId) query = query.eq("project_id", projectId);
   if (assigneeId) query = query.eq("assignee_id", assigneeId);
   query =
@@ -158,10 +160,12 @@ export const getProjects = cache(async (): Promise<Project[]> => {
     c[t.done ? "done" : "open"] += 1;
     counts.set(t.project_id, c);
   }
-  return projects.data.map((p) => ({
+  return projects.data.map((p, i) => ({
     id: p.id,
     name: p.name,
-    color: p.color,
+    // Kleur op volgorde van aanmaken (blauw, rood, groen, ...), niet de opgeslagen kleur:
+    // zo hebben je projecten altijd verschillende kleuren, ook als ze via SQL zijn aangemaakt
+    color: PROJECT_COLOR_ORDER[i % PROJECT_COLOR_ORDER.length],
     sections: sections.filter((s) => s.projectId === p.id).map(({ id, name }) => ({ id, name })),
     openCount: counts.get(p.id)?.open ?? 0,
     doneCount: counts.get(p.id)?.done ?? 0,
@@ -197,6 +201,34 @@ export const getTaskCounts = cache(async () => {
   const [open, dueToday, done] = results.map((r) => r.count ?? 0);
   return { open, dueToday, done };
 });
+
+export type DayCount = { date: string; count: number };
+
+/** Afgeronde taken per dag (Nederlandse tijd) over de laatste `days` dagen, t/m vandaag. Alleen waar jij medewerker bent. */
+export async function getCompletedPerDay(days = 10): Promise<DayCount[]> {
+  const [supabase, user] = await Promise.all([createClient(), getCurrentUser()]);
+  const dates = Array.from({ length: days }, (_, i) => todayISO(i - days + 1));
+  // Een dag extra marge voor het tijdzoneverschil; daarna per Nederlandse datum tellen
+  const since = new Date(`${dates[0]}T00:00:00Z`);
+  since.setUTCDate(since.getUTCDate() - 1);
+
+  const { data, error } = await supabase
+    .from("tasks")
+    .select("completed_at")
+    .eq("assignee_id", user.id)
+    .eq("done", true)
+    .gte("completed_at", since.toISOString());
+  if (error) throw new Error(`Supabase: ${error.message}`);
+
+  const toDate = new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE });
+  const counts = new Map<string, number>();
+  for (const t of data) {
+    if (!t.completed_at) continue;
+    const date = toDate.format(new Date(t.completed_at));
+    counts.set(date, (counts.get(date) ?? 0) + 1);
+  }
+  return dates.map((date) => ({ date, count: counts.get(date) ?? 0 }));
+}
 
 /** Tijdstip → DD-MM-YYYY in Nederlandse tijd. */
 function doneLabel(completedAt: string) {
