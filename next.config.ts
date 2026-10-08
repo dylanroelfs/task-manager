@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Next.js-ontwikkelmenu (Route, Bundler, Preferences) linksonder niet tonen
+  devIndicators: false,
 };
 
 export default nextConfig;
