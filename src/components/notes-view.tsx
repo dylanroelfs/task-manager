@@ -16,7 +16,7 @@ export async function NotesView({ projectId }: { projectId?: string }) {
       <Topbar
         title="Notities"
         tags={
-          <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-xs font-medium tabular-nums text-ink-2">
+          <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-xs font-medium tabular-nums text-ink-2 ring-1 ring-inset ring-line">
             {notes.length}
           </span>
         }

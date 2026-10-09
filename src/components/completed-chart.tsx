@@ -10,13 +10,13 @@ const longDate = new Intl.DateTimeFormat("nl-NL", {
   timeZone: "UTC",
 });
 
-/** Staafjes: afgeronde taken per dag. Vandaag in de accentkleur, weekend zachter. */
+/** Staafjes: afgeronde taken per dag, in grijstinten. Vandaag iets donkerder, weekend zachter. */
 export function CompletedChart({ days }: { days: DayCount[] }) {
   const total = days.reduce((sum, d) => sum + d.count, 0);
   const max = Math.max(...days.map((d) => d.count), 1);
 
   return (
-    <section className="card p-5">
+    <section className="card p-[1.2rem]">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-sm font-medium text-ink-2">Afgeronde taken</h2>
@@ -49,7 +49,7 @@ export function CompletedChart({ days }: { days: DayCount[] }) {
                 <div className="flex w-full flex-col items-center justify-end" style={{ height: BAR_MAX + 18 }}>
                   {d.count > 0 && (
                     <span
-                      className={`mb-1.5 text-[11px] font-medium tabular-nums ${today ? "text-accent" : "text-ink-3"}`}
+                      className={`mb-1.5 text-[11px] font-medium tabular-nums ${today ? "text-ink" : "text-ink-3"}`}
                     >
                       {d.count}
                     </span>
@@ -59,16 +59,16 @@ export function CompletedChart({ days }: { days: DayCount[] }) {
                       d.count === 0
                         ? "bg-line"
                         : today
-                          ? "bg-linear-to-t from-accent to-accent-2 shadow-[0_4px_14px_-4px] shadow-accent/50"
+                          ? "bg-ink/30"
                           : weekend
-                            ? "bg-accent/15 group-hover:bg-accent/30"
-                            : "bg-accent/30 group-hover:bg-accent/50"
+                            ? "bg-ink/[0.06] group-hover:bg-ink/15"
+                            : "bg-ink/10 group-hover:bg-ink/20"
                     }`}
                     style={{ height: d.count ? Math.max(6, Math.round((d.count / max) * BAR_MAX)) : 2 }}
                   />
                 </div>
                 <span
-                  className={`mt-2.5 text-[11px] leading-tight ${today ? "font-medium text-accent" : "text-ink-3"}`}
+                  className={`mt-2.5 text-[11px] leading-tight ${today ? "font-medium text-ink" : "text-ink-3"}`}
                   aria-hidden
                 >
                   {/* Op mobiel alleen de dag van de maand, anders past het niet */}

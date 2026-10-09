@@ -11,7 +11,7 @@ export default function LoginPage() {
     <main className="grid min-h-screen place-items-center bg-page px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center text-center">
-          <span className="grid h-11 w-11 place-items-center rounded-xl bg-linear-to-br from-accent to-accent-2 text-white shadow-[0_4px_14px_-4px] shadow-accent/50 ring-1 ring-white/20 ring-inset">
+          <span className="grid h-11 w-11 place-items-center rounded-xl bg-surface-2 text-ink-2 ring-1 ring-inset ring-line">
             <CheckCircleIcon width={21} height={21} strokeWidth={2} />
           </span>
           <h1 className="mt-5 text-xl font-semibold tracking-tight">Welkom terug</h1>

@@ -55,9 +55,11 @@ export function ProjectPie({
 
   return (
     // min-w-0: anders rekt de lange projectnaam in de legenda de rasterkolom op
-    <section className="card h-full min-w-0 p-5">
+    <section className="card h-full min-w-0 p-[1.2rem]">
       <h2 className="text-sm font-medium text-ink-2">{title}</h2>
-      {subtitle && <p className="mt-0.5 text-xs text-ink-3">{subtitle}</p>}
+      {/* Altijd een regel, ook zonder ondertitel: zo staan de cirkels van naast elkaar
+          geplaatste kaarten op dezelfde hoogte */}
+      <p className="mt-0.5 min-h-4 text-xs leading-4 text-ink-3">{subtitle}</p>
 
       {total === 0 ? (
         <p className="py-12 text-center text-xs text-ink-3">Nog geen {noun[1]}.</p>

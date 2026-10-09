@@ -108,7 +108,6 @@ export function HomeDashboard({
               value={counts.open}
               hint={spreadOver(openProjectCount, "Nog niet bij een project")}
               icon={<ListIcon width={16} height={16} />}
-              tone="bg-accent-soft text-accent"
             />
             <StatLink
               href="/afgerond"
@@ -116,7 +115,6 @@ export function HomeDashboard({
               value={counts.done}
               hint={spreadOver(doneProjectCount, "Nog niet bij een project")}
               icon={<CheckCircleIcon width={16} height={16} />}
-              tone="bg-good/10 text-good"
             />
             <StatLink
               href="/notities"
@@ -124,14 +122,13 @@ export function HomeDashboard({
               value={noteCount}
               hint={spreadOver(noteProjectCount, "Nog niet bij een project")}
               icon={<NoteIcon width={16} height={16} />}
-              tone="bg-accent-2/10 text-accent-2"
             />
           </section>
-          <CompletedChart days={perDay} />
           <div className="grid gap-3 lg:grid-cols-2">
             <ProjectPie entries={taskProjects} title="Taken per project" subtitle="Open en afgerond" noun={["taak", "taken"]} />
             <ProjectPie entries={noteProjects} title="Notities per project" noun={["notitie", "notities"]} />
           </div>
+          <CompletedChart days={perDay} />
         </div>
       </main>
     </>
@@ -174,7 +171,6 @@ function StatLink({
   value,
   hint,
   icon,
-  tone,
 }: {
   href: string;
   label: string;
@@ -182,21 +178,22 @@ function StatLink({
   /** Kleine regel onder het getal, bijv. "2 voor vandaag". */
   hint: string;
   icon: React.ReactNode;
-  /** Kleuren van het icoonvlak. */
-  tone: string;
 }) {
+  // Neutraal: kleur is voorbehouden aan projecten
+  const chip = "place-items-center rounded-lg bg-surface-2 text-ink-2 ring-1 ring-inset ring-line";
   return (
     <Link
       href={href}
       // Mobiel: één compacte regel (icoon, label, getal); vanaf sm een kaart met groot getal
-      className="card group relative flex items-center gap-3 p-4 transition-all hover:-translate-y-px hover:shadow-pop sm:block sm:p-5"
+      className="card group relative flex items-center gap-3 p-[1.2rem] transition-all hover:-translate-y-px hover:shadow-pop sm:block"
     >
-      <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg sm:hidden ${tone}`}>{icon}</span>
-      <div className="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between sm:gap-2">
+      <span className={`grid h-9 w-9 shrink-0 sm:hidden ${chip}`}>{icon}</span>
+      <div className="min-w-0 flex-1 sm:pr-10">
         <p className="text-sm font-medium text-ink-2">{label}</p>
         <p className="mt-0.5 truncate text-xs text-ink-3 sm:hidden">{hint}</p>
-        <span className={`hidden h-8 w-8 place-items-center rounded-lg sm:grid ${tone}`}>{icon}</span>
       </div>
+      {/* Los in de hoek, zodat het vlakje de afstand tussen naam en getal niet oprekt */}
+      <span className={`absolute right-[1.2rem] top-[1.2rem] hidden h-8 w-8 sm:grid ${chip}`}>{icon}</span>
       <p className="text-2xl font-semibold leading-none tracking-tight tabular-nums sm:mt-3 sm:text-[32px]">
         {value}
       </p>

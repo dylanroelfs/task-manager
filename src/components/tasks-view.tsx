@@ -67,9 +67,9 @@ export async function TasksView({
           project ? (
             <CountTags open={project.openCount} done={project.doneCount} />
           ) : view === "done" ? (
-            <CountTag count={counts.done} tone="done" title="Afgeronde taken op jouw naam" />
+            <CountTag count={counts.done} title="Afgeronde taken op jouw naam" />
           ) : (
-            <CountTag count={counts.open} tone="open" title="Open taken op jouw naam" />
+            <CountTag count={counts.open} title="Open taken op jouw naam" />
           )
         }
       />
@@ -202,13 +202,14 @@ function groupBySection(
   return result.sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name, "nl", { numeric: true }));
 }
 
-const TAG = "rounded-full px-2.5 py-0.5 text-xs font-medium tabular-nums";
-const TONES = { open: "bg-accent-soft text-accent", done: "bg-good/10 text-good" };
+// Neutraal, net als de andere tellers: kleur is voorbehouden aan projecten
+// Zelfde opmaak als de icoonvlakjes op Home: lichtgrijs met een dunne rand
+const TAG = "rounded-full bg-surface-2 px-2.5 py-0.5 text-xs font-medium tabular-nums text-ink-2 ring-1 ring-inset ring-line";
 
-/** Alleen het getal als tag: blauw voor open, groen voor afgerond. */
-function CountTag({ count, tone, title }: { count: number; tone: keyof typeof TONES; title?: string }) {
+/** Alleen het getal als tag. */
+function CountTag({ count, title }: { count: number; title?: string }) {
   return (
-    <span title={title} className={`${TAG} ${TONES[tone]}`}>
+    <span title={title} className={TAG}>
       {count}
     </span>
   );
@@ -218,8 +219,8 @@ function CountTag({ count, tone, title }: { count: number; tone: keyof typeof TO
 function CountTags({ open, done }: { open: number; done: number }) {
   return (
     <>
-      <span className={`${TAG} ${TONES.open}`}>{open} open</span>
-      <span className={`${TAG} ${TONES.done}`}>{done} afgerond</span>
+      <span className={TAG}>{open} open</span>
+      <span className={TAG}>{done} afgerond</span>
     </>
   );
 }

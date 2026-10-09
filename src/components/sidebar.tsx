@@ -61,7 +61,8 @@ export function Sidebar({
       >
         <div className="flex h-16 items-center justify-between px-5">
           <Link href="/" className="flex items-center gap-2.5" onClick={() => setOpen(false)}>
-            <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-linear-to-br from-accent to-accent-2 text-white shadow-[0_2px_8px_-2px] shadow-accent/50 ring-1 ring-white/20 ring-inset">
+            {/* Zelfde opmaak als de icoonvlakjes op Home: lichtgrijs met een dunne rand */}
+            <span className="grid h-8 w-8 place-items-center rounded-lg bg-surface-2 text-ink-2 ring-1 ring-inset ring-line">
               <CheckCircleIcon width={17} height={17} strokeWidth={2} />
             </span>
             <span className="text-[15px] font-semibold tracking-tight">Task Manager</span>
@@ -124,7 +125,7 @@ export function Sidebar({
                 className="h-9 w-9 shrink-0 rounded-full object-cover ring-2 ring-surface-2"
               />
             ) : (
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent-soft text-sm font-medium text-accent">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface-2 text-sm font-medium text-ink-2 ring-1 ring-inset ring-line">
                 {user.initials}
               </span>
             )}
@@ -179,10 +180,10 @@ function NavLink({
             : "text-ink-2 hover:bg-surface/60 hover:text-ink"
         }`}
       >
-        <span className={active ? "text-accent" : "text-ink-3 group-hover:text-ink-2"}>{icon}</span>
+        <span className={active ? "text-ink" : "text-ink-3 group-hover:text-ink-2"}>{icon}</span>
         <span className="min-w-0 flex-1 truncate">{label}</span>
         {count ? (
-          <span className="min-w-5 rounded-full bg-ink/[0.05] px-1.5 py-px text-center text-[11px] font-medium tabular-nums text-ink-2">
+          <span className="min-w-5 rounded-full bg-surface-2 px-1.5 py-px text-center text-[11px] font-medium tabular-nums text-ink-2 ring-1 ring-inset ring-line">
             {count}
           </span>
         ) : null}
