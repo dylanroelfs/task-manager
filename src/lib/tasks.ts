@@ -47,7 +47,7 @@ export type Section = { id: string; name: string };
 
 export type Member = { id: string; name: string; email: string; initials: string };
 
-const TIME_ZONE = "Europe/Amsterdam";
+export const TIME_ZONE = "Europe/Amsterdam";
 
 /** Vandaag als YYYY-MM-DD in Nederlandse tijd. */
 export function todayISO(offsetDays = 0) {

@@ -9,7 +9,7 @@ import { ProjectDot } from "./project-dot";
 import { TaskDialog } from "./task-dialog";
 
 const tagClass =
-  "inline-flex max-w-40 shrink-0 items-center gap-1.5 rounded-full border border-line px-2 py-0.5 text-[11px] text-ink-2";
+  "inline-flex max-w-40 shrink-0 items-center gap-1.5 rounded-md bg-surface-2 px-2 py-0.5 text-[11px] font-medium text-ink-2 ring-1 ring-inset ring-line";
 
 // Eerste zin (of eerste regel) van de beschrijving, als voorproefje in de lijst.
 function firstSentence(text: string) {
@@ -62,7 +62,7 @@ export function TaskItem({
         if ((e.target as Element).closest("button, select, label, a, input, textarea, dialog")) return;
         dialogRef.current?.showModal();
       }}
-      className={`flex cursor-pointer items-center gap-3 px-4 py-3 transition-opacity hover:bg-surface-2/50 ${
+      className={`flex cursor-pointer items-start gap-3 px-4 py-3.5 transition-colors hover:bg-surface-2/60 sm:items-center sm:px-5 ${
         pending ? "opacity-60" : ""
       }`}
     >
@@ -72,54 +72,57 @@ export function TaskItem({
         role="checkbox"
         aria-checked={done}
         aria-label={done ? `${task.title} als open markeren` : `${task.title} afvinken`}
-        className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border transition-colors ${
+        className={`mt-px grid h-5 w-5 shrink-0 place-items-center rounded-full border transition-colors sm:mt-0 ${
           done ? "border-accent bg-accent text-white" : "border-ink-3/60 hover:border-accent"
         }`}
       >
         {done && <CheckIcon width={12} height={12} strokeWidth={3} />}
       </button>
 
-      <div className="min-w-0 flex-1">
-        <button
-          type="button"
-          onClick={() => dialogRef.current?.showModal()}
-          title="Taak openen"
-          className={`block w-full truncate rounded text-left text-sm outline-none hover:text-accent focus-visible:ring-2 focus-visible:ring-accent-soft ${
-            done ? "text-ink-3 line-through" : ""
-          }`}
-        >
-          {task.title}
-          {!task.isOwner && <span className="ml-2 text-xs text-ink-3">van {task.ownerName}</span>}
-        </button>
-
-        {/* Voorproefje; de volledige beschrijving staat in de popup */}
-        {description && (
-          <p className="mt-0.5 truncate text-xs text-ink-3">{hasMore ? `${preview}…` : preview}</p>
-        )}
-      </div>
-
-      {/* Tags: project, onderdeel, ingestelde datum (afronddatum staat in de tooltip) */}
-      <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
-        {project && (
-          <span className={tagClass}>
-            <ProjectDot color={project.color} size={7} />
-            <span className="truncate">{project.name}</span>
-          </span>
-        )}
-        {task.section && (
-          <span className={tagClass}>
-            <span className="truncate">{task.section}</span>
-          </span>
-        )}
-        {task.dueLabel && (
-          <span
-            className={`${tagClass} tabular-nums ${!done && task.overdue ? "border-bad/30 font-medium text-bad" : ""}`}
-            title={done && task.doneLabel ? `Afgerond op ${task.doneLabel}` : task.overdue ? "Te laat" : undefined}
+      {/* Mobiel: tags onder de titel; vanaf sm ernaast */}
+      <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+        <div className="min-w-0 sm:flex-1">
+          <button
+            type="button"
+            onClick={() => dialogRef.current?.showModal()}
+            title="Taak openen"
+            className={`line-clamp-2 w-full rounded text-left text-sm outline-none sm:block sm:truncate hover:text-accent focus-visible:ring-2 focus-visible:ring-accent-soft ${
+              done ? "text-ink-3 line-through" : ""
+            }`}
           >
-            <CalendarIcon width={12} height={12} />
-            {task.dueLabel}
-          </span>
-        )}
+            {task.title}
+            {!task.isOwner && <span className="ml-2 text-xs text-ink-3">van {task.ownerName}</span>}
+          </button>
+
+          {/* Voorproefje; de volledige beschrijving staat in de popup */}
+          {description && (
+            <p className="mt-0.5 truncate text-xs text-ink-3">{hasMore ? `${preview}…` : preview}</p>
+          )}
+        </div>
+
+        {/* Tags: project, onderdeel, ingestelde datum (afronddatum staat in de tooltip) */}
+        <div className="flex flex-wrap items-center gap-1.5 sm:shrink-0 sm:justify-end">
+          {project && (
+            <span className={tagClass}>
+              <ProjectDot color={project.color} size={7} />
+              <span className="truncate">{project.name}</span>
+            </span>
+          )}
+          {task.section && (
+            <span className={tagClass}>
+              <span className="truncate">{task.section}</span>
+            </span>
+          )}
+          {task.dueLabel && (
+            <span
+              className={`${tagClass} tabular-nums ${!done && task.overdue ? "bg-bad/10! text-bad! ring-bad/25!" : ""}`}
+              title={done && task.doneLabel ? `Afgerond op ${task.doneLabel}` : task.overdue ? "Te laat" : undefined}
+            >
+              <CalendarIcon width={12} height={12} />
+              {task.dueLabel}
+            </span>
+          )}
+        </div>
       </div>
 
       <TaskDialog

@@ -11,6 +11,7 @@ export function NewTaskButton({
   currentUserId,
   defaultProjectId,
   today,
+  compact = false,
 }: {
   projects: Project[];
   members: Member[];
@@ -18,6 +19,8 @@ export function NewTaskButton({
   defaultProjectId?: string;
   /** Vandaag (YYYY-MM-DD, Nederlandse tijd), standaard datum */
   today: string;
+  /** Kleine plusknop (naast een paginatitel) in plaats van de brede knop. */
+  compact?: boolean;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
@@ -29,14 +32,26 @@ export function NewTaskButton({
 
   return (
     <>
-      <button
-        type="button"
-        onClick={open}
-        className="flex w-full items-center gap-2.5 rounded-2xl border border-dashed border-line bg-surface px-4 py-3.5 text-sm text-ink-3 transition-colors hover:border-accent/50 hover:text-ink-2"
-      >
-        <PlusIcon width={18} height={18} />
-        Nieuwe taak
-      </button>
+      {compact ? (
+        <button
+          type="button"
+          onClick={open}
+          title="Nieuwe taak"
+          aria-label="Nieuwe taak"
+          className="icon-button"
+        >
+          <PlusIcon width={18} height={18} />
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={open}
+          className="flex w-full items-center gap-2.5 rounded-2xl border border-dashed border-line bg-surface px-4 py-3.5 text-sm text-ink-3 transition-colors hover:border-accent/50 hover:text-ink-2"
+        >
+          <PlusIcon width={18} height={18} />
+          Nieuwe taak
+        </button>
+      )}
       <TaskDialog
         mode="create"
         dialogRef={dialogRef}

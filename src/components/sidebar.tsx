@@ -8,7 +8,7 @@ import { logout } from "@/lib/actions/auth";
 import { createProject } from "@/lib/actions/projects";
 import type { CurrentUser } from "@/lib/auth";
 import type { Project } from "@/lib/tasks";
-import { CheckCircleIcon, CloseIcon, HomeIcon, ListIcon, LogoutIcon, MenuIcon, PlusIcon } from "./icons";
+import { CheckCircleIcon, CloseIcon, HomeIcon, ListIcon, LogoutIcon, MenuIcon, NoteIcon, PlusIcon } from "./icons";
 import { ProjectDot } from "./project-dot";
 
 export function Sidebar({
@@ -16,11 +16,13 @@ export function Sidebar({
   openCount,
   doneCount,
   projects,
+  noteCount,
 }: {
   user: CurrentUser | null;
   openCount: number;
   doneCount: number;
   projects: Project[];
+  noteCount: number;
 }) {
   const pathname = usePathname();
   const activeProject = useSearchParams().get("project");
@@ -30,6 +32,7 @@ export function Sidebar({
     { href: "/", label: "Home", icon: HomeIcon, count: undefined },
     { href: "/open", label: "Open taken", icon: ListIcon, count: openCount },
     { href: "/afgerond", label: "Afgeronde taken", icon: CheckCircleIcon, count: doneCount },
+    { href: "/notities", label: "Notities", icon: NoteIcon, count: noteCount },
   ];
 
   return (
@@ -37,7 +40,7 @@ export function Sidebar({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed left-4 top-3.5 z-30 grid h-9 w-9 place-items-center rounded-lg border border-line bg-surface text-ink-2 lg:hidden"
+        className="icon-button fixed left-4 top-3 z-30 lg:hidden"
         aria-label="Menu openen"
       >
         <MenuIcon />
@@ -51,14 +54,15 @@ export function Sidebar({
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-line bg-surface transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
+        // Op mobiel een uitschuifpaneel; vanaf lg staat hij op de achtergrond naast het paneel
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-page transition-transform duration-200 max-lg:shadow-pop lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex h-16 items-center justify-between px-5">
           <Link href="/" className="flex items-center gap-2.5" onClick={() => setOpen(false)}>
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-ink text-surface">
-              <CheckCircleIcon width={17} height={17} />
+            <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-linear-to-br from-accent to-accent-2 text-white shadow-[0_2px_8px_-2px] shadow-accent/50 ring-1 ring-white/20 ring-inset">
+              <CheckCircleIcon width={17} height={17} strokeWidth={2} />
             </span>
             <span className="text-[15px] font-semibold tracking-tight">Task Manager</span>
           </Link>
@@ -72,13 +76,14 @@ export function Sidebar({
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-3 py-2">
+        <nav className="flex-1 overflow-y-auto px-3 py-3">
           <ul className="space-y-0.5" onClick={() => setOpen(false)}>
             {nav.map(({ href, label, icon: Icon, count }) => (
               <NavLink
                 key={href}
                 href={href}
-                active={pathname === href && !activeProject}
+                // Op Home met ?project= is het project actief, niet Home
+                active={pathname === href && (href !== "/" || !activeProject)}
                 icon={<Icon />}
                 label={label}
                 count={count}
@@ -86,7 +91,7 @@ export function Sidebar({
             ))}
           </ul>
 
-          <p className="px-3 pb-2 pt-6 text-[11px] font-medium uppercase tracking-wider text-ink-3">
+          <p className="px-3 pb-2 pt-7 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">
             Projecten
           </p>
           <ul className="space-y-0.5" onClick={() => setOpen(false)}>
@@ -109,14 +114,14 @@ export function Sidebar({
         </nav>
 
         {user && (
-          <div className="flex items-center gap-3 border-t border-line px-4 py-4">
+          <div className="m-3 flex items-center gap-3 rounded-xl border border-line bg-surface p-2.5 shadow-card">
             {user.avatarUrl ? (
               <Image
                 src={user.avatarUrl}
                 alt=""
                 width={36}
                 height={36}
-                className="h-9 w-9 shrink-0 rounded-full object-cover"
+                className="h-9 w-9 shrink-0 rounded-full object-cover ring-2 ring-surface-2"
               />
             ) : (
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent-soft text-sm font-medium text-accent">
@@ -127,7 +132,13 @@ export function Sidebar({
               <p className="truncate text-sm font-medium">{user.name}</p>
               <p className="truncate text-xs text-ink-3">{user.email}</p>
             </div>
-            <form action={logout}>
+            <form
+              action={logout}
+              // Eerst bevestigen; bij Annuleren gaat de form action niet door
+              onSubmit={(e) => {
+                if (!confirm("Weet je zeker dat je wilt uitloggen?")) e.preventDefault();
+              }}
+            >
               <button
                 type="submit"
                 title="Uitloggen"
@@ -162,13 +173,19 @@ function NavLink({
       <Link
         href={href}
         aria-current={active ? "page" : undefined}
-        className={`group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
-          active ? "bg-surface-2 font-medium text-ink" : "text-ink-2 hover:bg-surface-2 hover:text-ink"
+        className={`group flex items-center gap-3 rounded-lg px-3 py-[7px] text-sm transition-all ${
+          active
+            ? "bg-surface font-medium text-ink shadow-card ring-1 ring-line"
+            : "text-ink-2 hover:bg-surface/60 hover:text-ink"
         }`}
       >
         <span className={active ? "text-accent" : "text-ink-3 group-hover:text-ink-2"}>{icon}</span>
         <span className="min-w-0 flex-1 truncate">{label}</span>
-        {count ? <span className="text-xs tabular-nums text-ink-3">{count}</span> : null}
+        {count ? (
+          <span className="min-w-5 rounded-full bg-ink/[0.05] px-1.5 py-px text-center text-[11px] font-medium tabular-nums text-ink-2">
+            {count}
+          </span>
+        ) : null}
       </Link>
     </li>
   );
@@ -183,7 +200,7 @@ function NewProject() {
       <button
         type="button"
         onClick={() => setAdding(true)}
-        className="mt-0.5 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-ink-3 hover:bg-surface-2 hover:text-ink-2"
+        className="mt-0.5 flex w-full items-center gap-3 rounded-lg px-3 py-[7px] text-sm text-ink-3 hover:bg-surface/60 hover:text-ink-2"
       >
         <PlusIcon />
         Nieuw project

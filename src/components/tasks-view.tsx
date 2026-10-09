@@ -1,23 +1,23 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
+import { getNoteCount } from "@/lib/notes";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 import {
   getMembers,
   getProjects,
+  getTaskCounts,
   getTasks,
   todayISO,
-  type Member,
-  type Project,
   type Section,
   type TaskItemData,
   type TaskView,
 } from "@/lib/tasks";
-import { DeleteProjectButton } from "./delete-project-button";
+import { NoteIcon } from "./icons";
 import { NewTaskButton } from "./new-task-button";
+import { ProjectAddMenu } from "./project-add-menu";
 import { ProjectDot } from "./project-dot";
-import { NewSectionButton } from "./section-controls";
-import { TaskItem } from "./task-item";
+import { SearchableTaskList, TaskList } from "./task-list";
 import { Topbar } from "./topbar";
 
 export async function TasksView({
@@ -34,12 +34,14 @@ export async function TasksView({
 
   const user = await getCurrentUser();
   const withDone = view === "open" && !!projectId && showDone;
-  const [projects, members, openOrDone, done] = await Promise.all([
+  const [projects, members, openOrDone, done, noteCount, counts] = await Promise.all([
     getProjects(),
     getMembers(),
     // "Open taken": alleen waar jij medewerker bent. Een project toont al zijn taken.
     getTasks(view, projectId ? { projectId } : view === "open" ? { assigneeId: user.id } : {}),
     withDone ? getTasks("done", { projectId }) : [],
+    projectId ? getNoteCount(projectId) : 0,
+    getTaskCounts(),
   ]);
   // Afgeronde na de open taken, zodat ze binnen elk onderdeel onderaan staan
   const tasks = [...openOrDone, ...done];
@@ -55,12 +57,23 @@ export async function TasksView({
         ? withDone
           ? "Nog geen taken in dit project."
           : "Geen open taken in dit project."
-        : "Geen open taken op jouw naam. Voeg hierboven een taak toe.";
+        : "Geen open taken op jouw naam. Voeg er een toe met de plusknop.";
 
   return (
     <>
-      <Topbar title={project?.name ?? title} />
-      <main className="mx-auto w-full max-w-3xl flex-1 space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+      <Topbar
+        title={project?.name ?? title}
+        tags={
+          project ? (
+            <CountTags open={project.openCount} done={project.doneCount} />
+          ) : view === "done" ? (
+            <CountTag count={counts.done} tone="done" title="Afgeronde taken op jouw naam" />
+          ) : (
+            <CountTag count={counts.open} tone="open" title="Open taken op jouw naam" />
+          )
+        }
+      />
+      <main className="mx-auto w-full max-w-4xl flex-1 space-y-6 px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
         {project ? (
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -68,47 +81,42 @@ export async function TasksView({
                 <ProjectDot color={project.color} size={12} />
                 {project.name}
               </h1>
-              <CountTags open={project.openCount} done={project.doneCount} className="mt-2" />
             </div>
             <div className="flex items-center gap-2">
               {view === "open" && (
                 <Link
                   href={withDone ? `/?project=${project.id}` : `/?project=${project.id}&afgerond=1`}
                   aria-pressed={withDone}
-                  className={`inline-flex h-9 items-center rounded-lg border px-3 text-sm ${
+                  className={`inline-flex h-9 items-center rounded-lg border px-3 text-sm shadow-card transition-colors ${
                     withDone
                       ? "border-accent/40 bg-accent-soft text-accent"
-                      : "border-line bg-surface text-ink-2 hover:text-ink"
+                      : "border-line-strong bg-surface text-ink-2 hover:text-ink"
                   }`}
                 >
                   {withDone ? "Afgeronde verbergen" : "Afgeronde tonen"}
                 </Link>
               )}
-              <DeleteProjectButton id={project.id} name={project.name} />
+              {/* Naar Notities, met het filter op dit project aan */}
+              <Link
+                href={`/notities?project=${project.id}`}
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line-strong bg-surface px-3 text-sm text-ink-2 shadow-card transition-colors hover:text-ink"
+              >
+                <NoteIcon width={15} height={15} />
+                Notities
+                <span className="tabular-nums text-ink-3">{noteCount}</span>
+              </Link>
+              {view === "open" && (
+                <ProjectAddMenu
+                  project={project}
+                  projects={projects}
+                  members={members}
+                  currentUserId={user.id}
+                  today={todayISO()}
+                />
+              )}
             </div>
           </div>
-        ) : (
-          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        )}
-
-        {view === "open" && (
-          <div className={`grid items-start gap-3 ${project ? "sm:grid-cols-2" : ""}`}>
-            <div className="min-w-0">
-              <NewTaskButton
-                projects={projects}
-                members={members}
-                currentUserId={user.id}
-                defaultProjectId={project?.id}
-                today={todayISO()}
-              />
-            </div>
-            {project && (
-              <div className="min-w-0">
-                <NewSectionButton projectId={project.id} sections={project.sections} />
-              </div>
-            )}
-          </div>
-        )}
+        ) : null}
 
         {view === "open" && project && project.sections.length > 0 && (withDone || tasks.length > 0) ? (
           // Projectpagina: een blok per onderdeel. Alleen open taken: onderdelen zonder open
@@ -128,8 +136,29 @@ export async function TasksView({
               )}
             </section>
           ))
+        ) : !project ? (
+          // Open en afgeronde taken: één lijst met een zoekbalk
+          <SearchableTaskList
+            title={title}
+            action={
+              view === "open" && (
+                <NewTaskButton
+                  compact
+                  projects={projects}
+                  members={members}
+                  currentUserId={user.id}
+                  today={todayISO()}
+                />
+              )
+            }
+            tasks={tasks}
+            projects={projects}
+            members={members}
+            label={view === "done" ? "Zoek in afgeronde taken" : "Zoek in open taken"}
+            empty={empty}
+          />
         ) : tasks.length === 0 ? (
-          <section className="rounded-2xl border border-line bg-surface">
+          <section className="card">
             <p className="px-4 py-12 text-center text-sm text-ink-3">{empty}</p>
           </section>
         ) : (
@@ -137,31 +166,6 @@ export async function TasksView({
         )}
       </main>
     </>
-  );
-}
-
-function TaskList({
-  tasks,
-  projects,
-  members,
-}: {
-  tasks: TaskItemData[];
-  projects: Project[];
-  members: Member[];
-}) {
-  return (
-    <section className="overflow-hidden rounded-2xl border border-line bg-surface">
-      <ul className="divide-y divide-line">
-        {tasks.map((task) => (
-          <TaskItem
-            key={task.id}
-            task={task}
-            projects={projects}
-            members={members}
-          />
-        ))}
-      </ul>
-    </section>
   );
 }
 
@@ -198,25 +202,32 @@ function groupBySection(
   return result.sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name, "nl", { numeric: true }));
 }
 
-/** "x open taken" en "x afgeronde taken" als tags. */
-function CountTags({ open, done, className = "" }: { open: number; done: number; className?: string }) {
-  const tag = "rounded-full px-2.5 py-0.5 text-xs font-medium";
+const TAG = "rounded-full px-2.5 py-0.5 text-xs font-medium tabular-nums";
+const TONES = { open: "bg-accent-soft text-accent", done: "bg-good/10 text-good" };
+
+/** Alleen het getal als tag: blauw voor open, groen voor afgerond. */
+function CountTag({ count, tone, title }: { count: number; tone: keyof typeof TONES; title?: string }) {
   return (
-    <span className={`inline-flex flex-wrap gap-1.5 ${className}`}>
-      <span className={`${tag} bg-accent-soft text-accent`}>
-        {open} open {open === 1 ? "taak" : "taken"}
-      </span>
-      <span className={`${tag} bg-good/10 text-good`}>
-        {done} {done === 1 ? "afgeronde taak" : "afgeronde taken"}
-      </span>
+    <span title={title} className={`${TAG} ${TONES[tone]}`}>
+      {count}
     </span>
+  );
+}
+
+/** "x open" en "x afgerond" als tags, voor een project. */
+function CountTags({ open, done }: { open: number; done: number }) {
+  return (
+    <>
+      <span className={`${TAG} ${TONES.open}`}>{open} open</span>
+      <span className={`${TAG} ${TONES.done}`}>{done} afgerond</span>
+    </>
   );
 }
 
 export function SetupNotice() {
   return (
     <main className="mx-auto grid w-full max-w-7xl flex-1 place-items-center px-4 py-16">
-      <div className="max-w-md rounded-2xl border border-line bg-surface p-6">
+      <div className="card max-w-md p-6">
         <h1 className="text-lg font-semibold tracking-tight">Supabase is nog niet gekoppeld</h1>
         <p className="mt-2 text-sm text-ink-2">
           Kopieer <code className="font-mono text-xs">.env.example</code> naar{" "}

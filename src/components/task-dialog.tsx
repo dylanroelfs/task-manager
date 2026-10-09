@@ -270,7 +270,7 @@ export function TaskDialog(props: CreateProps | EditProps) {
  * Project en onderdeel: het onderdeel-veld toont de onderdelen van het gekozen project.
  * Staat binnen het formulier, dus de nieuwe key bij reset zet ook deze state terug.
  */
-function ProjectSectionFields({
+export function ProjectSectionFields({
   projects,
   initialProjectId,
   initialSection,

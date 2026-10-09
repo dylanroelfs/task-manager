@@ -9,7 +9,7 @@ export default function Error({
 }) {
   return (
     <main className="mx-auto grid w-full max-w-7xl flex-1 place-items-center px-4 py-16">
-      <div className="max-w-md rounded-2xl border border-line bg-surface p-6">
+      <div className="card max-w-md p-6">
         <h1 className="text-lg font-semibold tracking-tight">Data kon niet geladen worden</h1>
         <p className="mt-2 text-sm text-ink-2">
           Controleer of <code className="font-mono text-xs">supabase/migrations</code> in je project

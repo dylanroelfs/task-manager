@@ -72,6 +72,36 @@ export type Database = {
         Update: { name?: string };
         Relationships: [];
       };
+      notes: {
+        Row: {
+          id: string;
+          user_id: string;
+          project_id: string | null;
+          /** Onderdeel binnen het project (sections), hoort bij hetzelfde project. */
+          section_id: string | null;
+          title: string;
+          body: string;
+          created_at: string;
+          /** Schuift alleen mee bij een andere titel of tekst (trigger). */
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          project_id?: string | null;
+          section_id?: string | null;
+          title: string;
+          body?: string;
+          created_at?: string;
+        };
+        Update: {
+          project_id?: string | null;
+          section_id?: string | null;
+          title?: string;
+          body?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<never, never>;
     Functions: Record<never, never>;

@@ -8,16 +8,16 @@ export const metadata: Metadata = {
 
 export default function LoginPage() {
   return (
-    <main className="grid min-h-screen place-items-center px-4 py-12">
+    <main className="grid min-h-screen place-items-center bg-page px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center text-center">
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-ink text-surface">
-            <CheckCircleIcon width={20} height={20} />
+          <span className="grid h-11 w-11 place-items-center rounded-xl bg-linear-to-br from-accent to-accent-2 text-white shadow-[0_4px_14px_-4px] shadow-accent/50 ring-1 ring-white/20 ring-inset">
+            <CheckCircleIcon width={21} height={21} strokeWidth={2} />
           </span>
           <h1 className="mt-5 text-xl font-semibold tracking-tight">Welkom terug</h1>
           <p className="mt-1.5 text-sm text-ink-2">Log in om naar je taken te gaan.</p>
         </div>
-        <div className="rounded-2xl border border-line bg-surface p-6">
+        <div className="card p-6">
           <LoginForm />
         </div>
       </div>

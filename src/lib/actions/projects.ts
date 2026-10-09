@@ -23,16 +23,6 @@ export async function createProject(_prev: string | null, formData: FormData) {
   redirect(`/?project=${data.id}`);
 }
 
-export async function deleteProject(id: string) {
-  if (!UUID.test(id)) return;
-  const supabase = await createClient();
-  // Taken blijven bestaan; de database zet hun project_id op null.
-  const { error } = await supabase.from("projects").delete().eq("id", id);
-  if (error) throw new Error("Project verwijderen is niet gelukt.");
-  revalidatePath("/", "layout");
-  redirect("/");
-}
-
 /** Geeft een foutmelding terug, of null als het gelukt is. */
 export async function createSection(projectId: string, rawName: string): Promise<string | null> {
   if (!UUID.test(projectId)) return "Ongeldig project.";
