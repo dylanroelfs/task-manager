@@ -1,8 +1,15 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
-import { getNotes } from "@/lib/notes";
+import { getNoteProjectIds } from "@/lib/notes";
 import { getSupabaseEnv } from "@/lib/supabase/env";
-import { getCompletedPerDay, getProjects, getTaskCounts, getTasks, type DayCount } from "@/lib/tasks";
+import {
+  getCompletedPerDay,
+  getProjects,
+  getReadableProjects,
+  getTaskCounts,
+  getTaskRows,
+  type DayCount,
+} from "@/lib/tasks";
 import { CompletedChart } from "./completed-chart";
 import { ProjectPie, type PieEntry } from "./project-pie";
 import { CheckCircleIcon, ListIcon, NoteIcon } from "./icons";
@@ -12,34 +19,39 @@ import { Topbar } from "./topbar";
 export async function HomeView() {
   if (!getSupabaseEnv()) return <SetupNotice />;
 
-  const [user, counts, perDay, projects, open, done, notes] = await Promise.all([
+  // Alleen wat Home nodig heeft, en alles tegelijk: geen volledige taken of notities
+  const [user, counts, perDay, projects, readable, taskRows, noteProjectIds] = await Promise.all([
     getCurrentUser(),
     getTaskCounts(),
     getCompletedPerDay(10),
     getProjects(),
-    // Alle taken die je mag zien (eigen en aan jou toegewezen), voor de taartgrafiek per project
-    getTasks("open"),
-    getTasks("done", { limit: 1000 }),
-    getNotes(),
+    getReadableProjects(),
+    getTaskRows(),
+    getNoteProjectIds(),
   ]);
 
-  // Project per taak en notitie voor de taartgrafieken; onbekend project telt als "Geen project"
-  const taskProjects = [...open, ...done].map((t) => {
-    const project = projects.find((p) => p.id === t.projectId) ?? t.foreignProject;
-    return t.projectId && project ? { id: t.projectId, name: project.name, color: project.color } : null;
-  });
-  const noteProjects = notes.map((n) => projects.find((p) => p.id === n.projectId) ?? null);
+  // Project per taak en notitie voor de taartgrafieken. Eigen projecten met hun kleur uit de
+  // sidebar, die van anderen met hun opgeslagen kleur; onbekend telt als "Geen project".
+  const projectOf = (id: string | null): PieEntry => {
+    if (!id) return null;
+    const project = projects.find((p) => p.id === id) ?? readable.find((p) => p.id === id);
+    return project ? { id, name: project.name, color: project.color } : null;
+  };
+  const taskProjects = taskRows.map((t) => projectOf(t.project_id));
+  const noteProjects = noteProjectIds.map((id) => (projects.some((p) => p.id === id) ? projectOf(id) : null));
   // Zelfde taken als de getallen op de kaarten: alleen taken op jouw naam
-  const projectCount = (tasks: typeof open) =>
-    new Set(tasks.filter((t) => t.assigneeId === user.id && t.projectId).map((t) => t.projectId)).size;
+  const projectCount = (done: boolean) =>
+    new Set(
+      taskRows.filter((t) => t.assignee_id === user.id && t.done === done && t.project_id).map((t) => t.project_id),
+    ).size;
 
   return (
     <HomeDashboard
       userName={user.name}
       counts={counts}
-      noteCount={notes.length}
-      openProjectCount={projectCount(open)}
-      doneProjectCount={projectCount(done)}
+      noteCount={noteProjectIds.length}
+      openProjectCount={projectCount(false)}
+      doneProjectCount={projectCount(true)}
       perDay={perDay}
       taskProjects={taskProjects}
       noteProjects={noteProjects}

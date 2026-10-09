@@ -80,26 +80,20 @@ export async function getTasks(
           .order("due_time", { ascending: true, nullsFirst: false })
           .order("created_at", { ascending: true });
 
-  const [{ data, error }, user, members, ownProjects, sections] = await Promise.all([
+  // Alles tegelijk; ook de projecten van anderen, zodat er geen tweede ronde nodig is
+  const [{ data, error }, user, members, ownProjects, sections, readable] = await Promise.all([
     query,
     getCurrentUser(),
     getMembers(),
     getProjects(),
     getSections(),
+    getReadableProjects(),
   ]);
   if (error) throw new Error(`Supabase: ${error.message}`);
 
-  // Projecten van anderen (bij aan jou toegewezen taken) apart ophalen; RLS staat dat toe
+  // Projecten van anderen (bij aan jou toegewezen taken); RLS laat alleen die zien
   const ownIds = new Set(ownProjects.map((p) => p.id));
-  const foreignIds = [
-    ...new Set(data.map((t) => t.project_id).filter((id): id is string => !!id && !ownIds.has(id))),
-  ];
-  const foreign = new Map<string, { name: string; color: ProjectColor }>();
-  if (foreignIds.length) {
-    const res = await supabase.from("projects").select("id, name, color").in("id", foreignIds);
-    if (res.error) throw new Error(`Supabase: ${res.error.message}`);
-    res.data.forEach((p) => foreign.set(p.id, { name: p.name, color: p.color }));
-  }
+  const foreign = new Map(readable.filter((p) => !ownIds.has(p.id)).map((p) => [p.id, p]));
 
   const nameOf = (id: string) => members.find((m) => m.id === id)?.name ?? "Onbekend";
 
@@ -170,6 +164,28 @@ export const getProjects = cache(async (): Promise<Project[]> => {
     openCount: counts.get(p.id)?.open ?? 0,
     doneCount: counts.get(p.id)?.done ?? 0,
   }));
+});
+
+/**
+ * Alle projecten die je mag zien: je eigen, plus die van taken die aan jou zijn toegewezen
+ * (RLS). Alleen naam en opgeslagen kleur; klein genoeg om altijd in één keer op te halen.
+ */
+export const getReadableProjects = cache(async () => {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("projects").select("id, name, color");
+  if (error) throw new Error(`Supabase: ${error.message}`);
+  return data;
+});
+
+/**
+ * Per zichtbare taak alleen project, medewerker en of hij af is: genoeg voor de grafieken
+ * en tellers op Home, zonder de volledige taken op te halen.
+ */
+export const getTaskRows = cache(async () => {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("tasks").select("project_id, assignee_id, done");
+  if (error) throw new Error(`Supabase: ${error.message}`);
+  return data;
 });
 
 /** Eigen onderdelen, plus die van taken die aan jou zijn toegewezen (RLS). Oudste eerst. */

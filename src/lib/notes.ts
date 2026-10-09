@@ -48,6 +48,14 @@ export const getNoteCount = cache(async (projectId?: string) => {
   return count ?? 0;
 });
 
+/** Alleen het project van elke eigen notitie, voor de grafiek op Home. */
+export const getNoteProjectIds = cache(async () => {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("notes").select("project_id");
+  if (error) throw new Error(`Supabase: ${error.message}`);
+  return data.map((n) => n.project_id);
+});
+
 /** Tijdstip → DD-MM-YYYY HH:MM in Nederlandse tijd. */
 function timeLabel(timestamp: string) {
   return new Intl.DateTimeFormat("nl-NL", {
