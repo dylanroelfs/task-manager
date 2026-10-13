@@ -142,31 +142,23 @@ export function TaskDialog(props: CreateProps | EditProps) {
             className="mt-3 w-full resize-none rounded-lg bg-transparent text-lg font-medium leading-snug outline-none placeholder:text-ink-3"
           />
 
-          <textarea
-            name="description"
-            maxLength={2000}
-            rows={6}
-            defaultValue={values.description}
-            onKeyDown={listKeys}
-            placeholder="Beschrijving (optioneel)"
-            aria-label="Beschrijving"
-            className={`mt-2 w-full resize-y rounded-lg bg-surface-2/60 px-3 py-2.5 text-sm leading-relaxed outline-none placeholder:text-ink-3 focus:ring-4 focus:ring-accent-soft ${
-              readOnly && !values.description ? "hidden" : ""
-            }`}
-          />
-
           {/* Gewone tekst, bijv. de mails waar de taak over gaat */}
-          <textarea
-            name="reference"
-            maxLength={2000}
-            rows={3}
-            defaultValue={values.reference}
-            placeholder="Referentie (optioneel)"
-            aria-label="Referentie"
-            className={`mt-2 w-full resize-y rounded-lg bg-surface-2/60 px-3 py-2.5 text-sm leading-relaxed outline-none placeholder:text-ink-3 focus:ring-4 focus:ring-accent-soft ${
-              readOnly && !values.reference ? "hidden" : ""
-            }`}
-          />
+          <label className={`mt-3 block space-y-1.5 ${readOnly && !values.reference ? "hidden" : ""}`}>
+            <span className="text-xs text-ink-3">Referentie (optioneel)</span>
+            <input name="reference" maxLength={2000} defaultValue={values.reference} className={fieldClass} />
+          </label>
+
+          <label className={`mt-3 block space-y-1.5 ${readOnly && !values.description ? "hidden" : ""}`}>
+            <span className="text-xs text-ink-3">Notitie</span>
+            <textarea
+              name="description"
+              maxLength={2000}
+              rows={6}
+              defaultValue={values.description}
+              onKeyDown={listKeys}
+              className="w-full resize-y rounded-lg bg-surface-2/60 px-3 py-2.5 text-sm leading-relaxed outline-none focus:ring-4 focus:ring-accent-soft"
+            />
+          </label>
 
           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <ProjectSectionFields
