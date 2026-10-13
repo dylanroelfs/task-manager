@@ -143,7 +143,7 @@ export function TaskDialog(props: CreateProps | EditProps) {
           />
 
           {/* Gewone tekst, bijv. de mails waar de taak over gaat */}
-          <label className={`mt-3 block space-y-1.5 ${readOnly && !values.reference ? "hidden" : ""}`}>
+          <label className={`mt-1 block space-y-1.5 ${readOnly && !values.reference ? "hidden" : ""}`}>
             <span className="text-xs text-ink-3">Referentie (optioneel)</span>
             <input name="reference" maxLength={2000} defaultValue={values.reference} className={fieldClass} />
           </label>
