@@ -3,9 +3,10 @@
 import { useId, useRef, useState, useTransition, type RefObject } from "react";
 import { createNote, updateNote } from "@/lib/actions/notes";
 import type { NoteData } from "@/lib/notes";
-import { BULLET, bulletLevel, INDENT, MAX_LEVEL, withBullets } from "@/lib/note-text";
+import { withBullets } from "@/lib/note-text";
 import type { Project } from "@/lib/tasks";
 import { CalendarIcon, CloseIcon, PencilIcon, TrashIcon } from "./icons";
+import { listKeys } from "./list-keys";
 import { NoteBody } from "./note-body";
 import { ProjectDot } from "./project-dot";
 import { ProjectSectionFields } from "./task-dialog";
@@ -209,7 +210,7 @@ export function NoteDialog(props: CreateProps | EditProps) {
             maxLength={10000}
             rows={12}
             defaultValue={values.body}
-            onKeyDown={bulletKeys}
+            onKeyDown={listKeys}
             placeholder="Schrijf je notitie…"
             aria-label="Notitie"
             className="mt-2 w-full resize-y rounded-lg bg-surface-2/60 px-3 py-2.5 text-sm leading-relaxed outline-none placeholder:text-ink-3 focus:ring-4 focus:ring-accent-soft"
@@ -245,77 +246,4 @@ export function NoteDialog(props: CreateProps | EditProps) {
       )}
     </dialog>
   );
-}
-
-/**
- * Puntenlijst tijdens het typen, zoals in Apple Notes:
- * - "- " of "* " aan het begin van een regel wordt een bolletje;
- * - Enter op een regel met een bolletje begint een nieuw punt op hetzelfde niveau;
- * - Enter op een leeg punt springt eerst terug, en stopt bovenaan de lijst;
- * - Tab maakt van een punt een subpunt, Shift+Tab zet het een niveau terug.
- * Tab buiten een lijst doet gewoon wat het altijd doet (naar het volgende veld).
- */
-function bulletKeys(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-  if (e.nativeEvent.isComposing) return;
-  const el = e.currentTarget;
-  const { selectionStart: start, selectionEnd: end, value } = el;
-  const lineStart = value.lastIndexOf("\n", start - 1) + 1;
-  const beforeCursor = value.slice(lineStart, start);
-
-  if (e.key === "Tab") {
-    if (indentLines(el, e.shiftKey ? -1 : 1)) e.preventDefault();
-    return;
-  }
-  if (start !== end && e.key !== "Enter") return;
-
-  const marker = /^([ \t]*)[-*]$/.exec(beforeCursor);
-  if (e.key === " " && marker) {
-    e.preventDefault();
-    el.setRangeText(marker[1] + BULLET, lineStart, start, "end");
-    return;
-  }
-
-  const level = bulletLevel(beforeCursor);
-  if (e.key === "Enter" && !e.shiftKey && level !== null) {
-    e.preventDefault();
-    const prefix = INDENT.repeat(level) + BULLET;
-    if (beforeCursor === prefix && start === end) {
-      // Leeg punt: een niveau terug, of bovenaan de lijst stoppen
-      el.setRangeText(level > 0 ? INDENT.repeat(level - 1) + BULLET : "", lineStart, start, "end");
-    } else {
-      el.setRangeText(`\n${prefix}`, start, end, "end");
-    }
-  }
-}
-
-/**
- * Springt de lijstregels in de selectie (of de regel van de cursor) een niveau in of terug.
- * Geeft false als er geen lijstregel bij zit; dan doet Tab gewoon zijn normale werk.
- */
-function indentLines(el: HTMLTextAreaElement, direction: 1 | -1) {
-  const { selectionStart: start, selectionEnd: end, value } = el;
-  const from = value.lastIndexOf("\n", start - 1) + 1;
-  const lineEnd = value.indexOf("\n", end);
-  const to = lineEnd === -1 ? value.length : lineEnd;
-  const lines = value.slice(from, to).split("\n");
-  if (!lines.some((l) => bulletLevel(l) !== null)) return false;
-
-  let firstShift = 0;
-  let totalShift = 0;
-  const next = lines.map((line, i) => {
-    const level = bulletLevel(line);
-    if (level === null) return line;
-    const newLevel = Math.max(0, Math.min(MAX_LEVEL, level + direction));
-    const rest = line.slice(line.indexOf(BULLET));
-    const result = INDENT.repeat(newLevel) + rest;
-    const shift = result.length - line.length;
-    if (i === 0) firstShift = shift;
-    totalShift += shift;
-    return result;
-  });
-
-  el.setRangeText(next.join("\n"), from, to);
-  // Cursor (of selectie) blijft op dezelfde plek in de tekst staan
-  el.setSelectionRange(Math.max(from, start + firstShift), end + totalShift);
-  return true;
 }

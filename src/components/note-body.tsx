@@ -32,12 +32,17 @@ function Blocks({ blocks, truncate }: { blocks: NoteBlock[]; truncate: boolean }
     ) : (
       // Eigen bolletje: een list-disc-marker valt weg door de overflow van truncate.
       // Sublijsten springen in en krijgen per niveau een ander bolletje, zoals in Apple Notes.
+      // Genummerde punten tonen het nummer zoals het in de tekst staat.
       <ul key={i} className="pl-1">
         {block.items.map((item, j) => (
           <li key={j} className="flex gap-2" style={{ paddingLeft: `${item.level * 1.25}rem` }}>
-            <span aria-hidden className="w-2 shrink-0 text-center text-ink-3">
-              {MARKERS[item.level % MARKERS.length]}
-            </span>
+            {item.number === null ? (
+              <span aria-hidden className="w-2 shrink-0 text-center text-ink-3">
+                {MARKERS[item.level % MARKERS.length]}
+              </span>
+            ) : (
+              <span className="min-w-4 shrink-0 text-right text-ink-3 tabular-nums">{item.number}.</span>
+            )}
             <span className={line}>
               <Linked text={item.text} />
             </span>

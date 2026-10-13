@@ -3,9 +3,11 @@
 import { useId, useRef, useState, useTransition, type RefObject } from "react";
 import { createTask, updateTask } from "@/lib/actions/tasks";
 import type { TaskStatus } from "@/lib/supabase/database.types";
+import { withBullets } from "@/lib/note-text";
 import { TASK_STATUSES } from "@/lib/task-status";
 import type { Member, Project, Section, TaskItemData } from "@/lib/tasks";
 import { CheckIcon, CloseIcon, TrashIcon } from "./icons";
+import { listKeys } from "./list-keys";
 import { useBackdropClose } from "./use-backdrop-close";
 
 const fieldClass =
@@ -42,7 +44,8 @@ export function TaskDialog(props: CreateProps | EditProps) {
     props.mode === "edit"
       ? {
           title: props.task.title,
-          description: props.task.description ?? "",
+          // Oude beschrijvingen met "- " of "* " meteen als bolletjes tonen
+          description: withBullets(props.task.description ?? ""),
           projectId: props.projectId ?? "",
           sectionId: props.task.sectionId ?? "",
           dueDate: props.task.dueDate ?? "",
@@ -142,6 +145,7 @@ export function TaskDialog(props: CreateProps | EditProps) {
             maxLength={2000}
             rows={6}
             defaultValue={values.description}
+            onKeyDown={listKeys}
             placeholder="Beschrijving (optioneel)"
             aria-label="Beschrijving"
             className={`mt-2 w-full resize-y rounded-lg bg-surface-2/60 px-3 py-2.5 text-sm leading-relaxed outline-none placeholder:text-ink-3 focus:ring-4 focus:ring-accent-soft ${

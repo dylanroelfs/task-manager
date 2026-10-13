@@ -1,41 +1,79 @@
-/** Begin van een regel in een puntenlijst. */
+/** Begin van een regel in een puntenlijst. Genummerde regels beginnen met "1. ". */
 export const BULLET = "• ";
-/** Eén niveau inspringen in een puntenlijst (Tab), zoals sublijsten in Apple Notes. */
+/** Eén niveau inspringen in een lijst (Tab), zoals sublijsten in Apple Notes. */
 export const INDENT = "  ";
 /** Diepste niveau (0 = bovenste). */
 export const MAX_LEVEL = 3;
 
-/** Regel met een bolletje: inspringing, en de tekst erachter. */
-const BULLET_LINE = /^([ \t]*)• (.*)$/;
+/** Regel in een lijst: inspringing, bolletje of nummer ("3."), en de tekst erachter. */
+const LIST_LINE = /^([ \t]*)(•|\d{1,3}\.) (.*)$/;
 
 /** "- " en "* " aan het begin van een regel worden een echt bolletje; inspringing blijft. */
 export function withBullets(text: string) {
   return text.replace(/^([ \t]*)[-*][ \t]+/gm, `$1${BULLET}`);
 }
 
-/** Niveau van een regel met een bolletje, of null als het geen lijstregel is. */
-export function bulletLevel(line: string): number | null {
-  const match = BULLET_LINE.exec(line);
+/** Lijstregel: niveau, nummer (null bij een bolletje), de inspringing zoals getypt en de tekst. */
+export type ListLine = { level: number; number: number | null; indent: string; text: string };
+
+/** De regel als lijstregel, of null als het geen lijstregel is. */
+export function listLine(line: string): ListLine | null {
+  const match = LIST_LINE.exec(line);
   if (!match) return null;
   const indent = match[1].replace(/\t/g, INDENT).length;
-  return Math.min(Math.floor(indent / INDENT.length), MAX_LEVEL);
+  return {
+    level: Math.min(Math.floor(indent / INDENT.length), MAX_LEVEL),
+    number: match[2] === "•" ? null : Number(match[2].slice(0, -1)),
+    indent: match[1],
+    text: match[3],
+  };
 }
 
-export type ListItem = { text: string; level: number };
+/** Begin van een lijstregel op een niveau: bolletje, of nummer met punt. */
+export function listPrefix(level: number, number: number | null) {
+  return INDENT.repeat(level) + (number === null ? BULLET : `${number}. `);
+}
+
+/**
+ * Nummert genummerde lijsten door: elk punt is één hoger dan het vorige punt op hetzelfde
+ * niveau. Het eerste punt houdt zijn eigen nummer (een lijst mag bij 5 beginnen). Een
+ * sublijst begint opnieuw; een regel buiten de lijst (ook een lege) sluit de lijst af.
+ */
+export function renumber(lines: string[]): string[] {
+  let counters: (number | null)[] = [];
+  return lines.map((line) => {
+    const item = listLine(line);
+    if (!item) {
+      counters = [];
+      return line;
+    }
+    counters = counters.slice(0, item.level + 1);
+    const previous = counters[item.level];
+    if (item.number === null) {
+      counters[item.level] = null;
+      return line;
+    }
+    const number = typeof previous === "number" ? previous + 1 : item.number;
+    counters[item.level] = number;
+    return number === item.number ? line : `${item.indent}${number}. ${item.text}`;
+  });
+}
+
+export type ListItem = { text: string; level: number; number: number | null };
 export type NoteBlock = { type: "text"; text: string } | { type: "list"; items: ListItem[] };
 
 /**
- * Tekst in alinea-regels en puntenlijsten (opeenvolgende regels met een bolletje, elk met
- * een niveau). keepEmpty: lege regels blijven als lege tekstblokken staan (witruimte in de
- * volledige weergave).
+ * Tekst in alinea-regels en lijsten (opeenvolgende regels met een bolletje of nummer, elk
+ * met een niveau). keepEmpty: lege regels blijven als lege tekstblokken staan (witruimte in
+ * de volledige weergave).
  */
 export function noteBlocks(text: string, { keepEmpty = false } = {}): NoteBlock[] {
   const blocks: NoteBlock[] = [];
   for (const line of withBullets(text).split("\n")) {
     const last = blocks.at(-1);
-    const level = bulletLevel(line);
-    if (level !== null) {
-      const item = { text: BULLET_LINE.exec(line)![2], level };
+    const list = listLine(line);
+    if (list) {
+      const item = { text: list.text, level: list.level, number: list.number };
       if (last?.type === "list") last.items.push(item);
       else blocks.push({ type: "list", items: [item] });
     } else if (line.trim() || keepEmpty) {

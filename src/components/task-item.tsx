@@ -2,6 +2,7 @@
 
 import { useOptimistic, useRef, useTransition } from "react";
 import { deleteTask, setTaskStatus } from "@/lib/actions/tasks";
+import { listLine } from "@/lib/note-text";
 import type { TaskStatus } from "@/lib/supabase/database.types";
 import type { Member, Project, TaskItemData } from "@/lib/tasks";
 import { CalendarIcon, CheckIcon } from "./icons";
@@ -12,8 +13,11 @@ const tagClass =
   "inline-flex max-w-40 shrink-0 items-center gap-1.5 rounded-md bg-surface-2 px-2 py-0.5 text-[11px] font-medium text-ink-2 ring-1 ring-inset ring-line";
 
 // Eerste zin (of eerste regel) van de beschrijving, als voorproefje in de lijst.
+// Bij een lijstregel zonder het nummer, anders is "1." al een hele zin.
 function firstSentence(text: string) {
-  const line = text.trim().split("\n")[0];
+  const first = text.trim().split("\n")[0];
+  const item = listLine(first);
+  const line = item && item.number !== null ? item.text : first;
   return line.match(/^.*?[.!?](?=\s|$)/)?.[0] ?? line;
 }
 
