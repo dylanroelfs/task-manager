@@ -79,9 +79,9 @@ export function SubtaskList({
   }
 
   return (
-    // Zelfde blok als Notitie in de taak-popup
-    <section className="rounded-xl border border-line bg-surface p-3.5">
-      <div className="flex items-center justify-between">
+    // Zelfde blok als Notitie in de taak-popup; de rijen zoals de lijst met open taken
+    <section className="overflow-hidden rounded-xl border border-line bg-surface">
+      <div className="flex items-center justify-between px-3.5 pt-3.5 pb-2">
         <h3 className="text-xs font-medium text-ink-2">Deeltaken</h3>
         {items.length > 0 && (
           <span className="text-xs text-ink-3 tabular-nums">
@@ -90,20 +90,20 @@ export function SubtaskList({
         )}
       </div>
 
-      <ul className="-mx-1.5 mt-1.5 space-y-0.5">
+      <ul className="divide-y divide-line border-t border-line">
         {items.map((s) => (
-          <li key={s.id} className="group flex min-h-8 items-center gap-2.5 rounded-lg px-1.5 hover:bg-surface-2/60">
+          <li key={s.id} className="group flex items-center gap-3 px-3.5 py-3 transition-colors hover:bg-surface-2/60">
             <button
               type="button"
               role="checkbox"
               aria-checked={s.done}
               aria-label={s.done ? `${s.title} als open markeren` : `${s.title} afvinken`}
               onClick={() => run({ type: "done", id: s.id, done: !s.done }, () => setSubtaskDone(s.id, !s.done))}
-              className={`grid h-4 w-4 shrink-0 place-items-center rounded-full border transition-colors ${
+              className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border transition-colors ${
                 s.done ? "border-accent bg-accent text-white" : "border-ink-3/60 hover:border-accent"
               }`}
             >
-              {s.done && <CheckIcon width={10} height={10} strokeWidth={3} />}
+              {s.done && <CheckIcon width={12} height={12} strokeWidth={3} />}
             </button>
 
             {editingId === s.id ? (
@@ -122,21 +122,21 @@ export function SubtaskList({
                     e.currentTarget.blur();
                   }
                 }}
-                className="min-w-0 flex-1 bg-transparent py-1 text-sm outline-none"
+                className="min-w-0 flex-1 bg-transparent text-sm outline-none"
               />
             ) : canEdit ? (
               <button
                 type="button"
                 onClick={() => setEditingId(s.id)}
                 title="Wijzigen"
-                className={`min-w-0 flex-1 py-1 text-left text-sm [overflow-wrap:anywhere] ${
+                className={`min-w-0 flex-1 text-left text-sm [overflow-wrap:anywhere] hover:text-accent ${
                   s.done ? "text-ink-3 line-through" : ""
                 }`}
               >
                 {s.title}
               </button>
             ) : (
-              <span className={`min-w-0 flex-1 py-1 text-sm [overflow-wrap:anywhere] ${s.done ? "text-ink-3 line-through" : ""}`}>
+              <span className={`min-w-0 flex-1 text-sm [overflow-wrap:anywhere] ${s.done ? "text-ink-3 line-through" : ""}`}>
                 {s.title}
               </span>
             )}
@@ -155,8 +155,11 @@ export function SubtaskList({
         ))}
 
         {canEdit && (
-          <li className="flex min-h-8 items-center gap-2.5 px-1.5 text-ink-3">
-            <PlusIcon width={16} height={16} className="shrink-0" />
+          <li className="flex items-center gap-3 px-3.5 py-3 text-ink-3">
+            {/* Zelfde breedte als het rondje, zodat de tekst gelijk staat */}
+            <span className="grid h-5 w-5 shrink-0 place-items-center">
+              <PlusIcon width={16} height={16} />
+            </span>
             <input
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
@@ -170,13 +173,13 @@ export function SubtaskList({
                   add();
                 }
               }}
-              className="min-w-0 flex-1 bg-transparent py-1 text-sm text-ink outline-none placeholder:text-ink-3"
+              className="min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ink-3"
             />
           </li>
         )}
       </ul>
 
-      {error && <p className="mt-1.5 text-xs text-bad">{error}</p>}
+      {error && <p className="border-t border-line px-3.5 py-2 text-xs text-bad">{error}</p>}
     </section>
   );
 }
