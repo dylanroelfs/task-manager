@@ -79,17 +79,18 @@ export function SubtaskList({
   }
 
   return (
-    <div className="mt-3">
-      <div className="flex items-center justify-between text-xs text-ink-3">
-        <span>Deeltaken</span>
+    // Zelfde blok als Notitie in de taak-popup
+    <section className="rounded-xl border border-line bg-surface p-3.5">
+      <div className="flex items-center justify-between">
+        <h3 className="text-xs font-medium text-ink-2">Deeltaken</h3>
         {items.length > 0 && (
-          <span className="tabular-nums">
+          <span className="text-xs text-ink-3 tabular-nums">
             {doneCount}/{items.length}
           </span>
         )}
       </div>
 
-      <ul className="mt-1.5 space-y-0.5">
+      <ul className="-mx-1.5 mt-1.5 space-y-0.5">
         {items.map((s) => (
           <li key={s.id} className="group flex min-h-8 items-center gap-2.5 rounded-lg px-1.5 hover:bg-surface-2/60">
             <button
@@ -176,6 +177,6 @@ export function SubtaskList({
       </ul>
 
       {error && <p className="mt-1.5 text-xs text-bad">{error}</p>}
-    </div>
+    </section>
   );
 }

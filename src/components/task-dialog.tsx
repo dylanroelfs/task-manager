@@ -11,6 +11,10 @@ import { listKeys } from "./list-keys";
 import { SubtaskList } from "./subtask-list";
 import { useBackdropClose } from "./use-backdrop-close";
 
+/** Blok in de linkerkolom van de popup (deeltaken, notitie); zelfde stijl als in SubtaskList. */
+const blockClass = "rounded-xl border border-line bg-surface p-3.5";
+const blockHeadingClass = "text-xs font-medium text-ink-2";
+
 const fieldClass =
   "h-10 w-full min-w-0 rounded-lg border border-line bg-surface px-3 text-sm outline-none focus:border-accent focus:ring-4 focus:ring-accent-soft";
 
@@ -66,6 +70,7 @@ export function TaskDialog(props: CreateProps | EditProps) {
         };
 
   const headingId = useId();
+  const statusId = useId();
   const formRef = useRef<HTMLFormElement>(null);
   const [error, setError] = useState<string | null>(null);
   // Telt elke reset (sluiten, en React na een form action), zodat het formulier opnieuw opbouwt
@@ -97,7 +102,7 @@ export function TaskDialog(props: CreateProps | EditProps) {
       }}
       // Klik op de achtergrond sluit de popup (niet bij tekst selecteren en buiten loslaten)
       {...backdrop}
-      className="m-auto w-[calc(100%-2rem)] max-w-lg rounded-2xl border border-line bg-surface p-0 text-ink shadow-2xl shadow-black/20 backdrop:bg-black/40 backdrop:backdrop-blur-[2px]"
+      className="m-auto w-[calc(100%-2rem)] max-w-3xl rounded-2xl border border-line bg-surface p-0 text-ink shadow-2xl shadow-black/20 backdrop:bg-black/40 backdrop:backdrop-blur-[2px]"
     >
       <form
         ref={formRef}
@@ -107,182 +112,198 @@ export function TaskDialog(props: CreateProps | EditProps) {
         key={`${Object.values(values).join("|")}|${resets}`}
         onReset={() => setResets((n) => n + 1)}
         action={save}
-        className="p-5"
       >
-        <div className="flex items-center justify-between gap-3">
-          <h2 id={headingId} className="text-sm font-medium text-ink-2">
-            {!task ? "Nieuwe taak" : readOnly ? `Taak van ${task.ownerName}` : "Taak bewerken"}
-          </h2>
-          <button
-            type="button"
-            onClick={close}
-            aria-label="Sluiten"
-            className="grid h-8 w-8 place-items-center rounded-md text-ink-3 hover:bg-surface-2 hover:text-ink"
-          >
-            <CloseIcon width={17} height={17} />
-          </button>
-        </div>
-
-        {/* Alleen de eigenaar mag bewerken; de database dwingt dat ook af */}
-        <fieldset disabled={readOnly} className="min-w-0">
-          <textarea
-            name="title"
-            required
-            maxLength={200}
-            rows={1}
-            defaultValue={values.title}
-            placeholder="Wat moet er gebeuren?"
-            aria-label="Titel"
-            // Groeit mee met lange zinnen (field-sizing); Enter slaat op (geen regeleindes in titels)
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                e.currentTarget.form?.requestSubmit();
-              }
-            }}
-            className="mt-3 w-full resize-none rounded-lg bg-transparent text-lg font-medium leading-snug outline-none [field-sizing:content] placeholder:text-ink-3"
-          />
-
-          {/* Gewone tekst, bijv. de mails waar de taak over gaat */}
-          <label className={`mt-1 block space-y-1.5 ${readOnly && !values.reference ? "hidden" : ""}`}>
-            <span className="text-xs text-ink-3">Referentie (optioneel)</span>
-            <input name="reference" maxLength={2000} defaultValue={values.reference} className={fieldClass} />
-          </label>
-        </fieldset>
-
-        {/* Buiten de fieldset: een medewerker mag deeltaken afvinken. Slaat direct op. */}
-        {task ? (
-          <SubtaskList taskId={task.id} subtasks={task.subtasks} canEdit={!readOnly} />
-        ) : (
-          <p className="mt-3 text-xs text-ink-3">Deeltaken kun je toevoegen nadat de taak is opgeslagen.</p>
-        )}
-
-        <fieldset disabled={readOnly} className="min-w-0">
-          <label className={`mt-3 block space-y-1.5 ${readOnly && !values.description ? "hidden" : ""}`}>
-            <span className="text-xs text-ink-3">Notitie</span>
-            <textarea
-              name="description"
-              maxLength={2000}
-              rows={3}
-              defaultValue={values.description}
-              onKeyDown={listKeys}
-              // Groeit en krimpt mee met de tekst (field-sizing); lange tekst scrolt
-              className="max-h-[60vh] min-h-24 w-full resize-none rounded-lg [field-sizing:content] bg-surface-2/60 px-3 py-2.5 text-sm leading-relaxed outline-none focus:ring-4 focus:ring-accent-soft"
-            />
-          </label>
-
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <ProjectSectionFields
-              projects={projects}
-              initialProjectId={values.projectId}
-              initialSection={
-                task?.sectionId && task.section ? { id: task.sectionId, name: task.section } : null
-              }
-              foreignProjectName={task?.foreignProject?.name}
-            />
-            <label className="space-y-1.5">
-              <span className="text-xs text-ink-3">Datum</span>
-              <input type="date" name="due_date" defaultValue={values.dueDate} className={fieldClass} />
-            </label>
-            <label className="space-y-1.5">
-              <span className="text-xs text-ink-3">Tijd (optioneel)</span>
-              <input type="time" name="due_time" defaultValue={values.dueTime} className={fieldClass} />
-            </label>
-            <label className="space-y-1.5 sm:col-span-2">
-              <span className="text-xs text-ink-3">Medewerker</span>
-              <select name="assignee_id" defaultValue={values.assigneeId} className={fieldClass}>
-                <option value="">Niemand</option>
-                {members.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        </fieldset>
-
-        {readOnly && (
-          <p className="mt-4 text-xs text-ink-3">
-            Deze taak is aan jou toegewezen. Alleen {task.ownerName} kan hem bewerken; jij kunt de
-            status wijzigen.
-          </p>
-        )}
-
-        {error && <p className="mt-4 rounded-lg bg-bad/10 px-3 py-2 text-sm text-bad">{error}</p>}
-
-        <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-line pt-4">
-          {props.mode === "edit" && (
-            <>
-              {/* Status staat los van het formulier en wordt direct opgeslagen */}
-              <div
-                role="radiogroup"
-                aria-label="Status"
-                className="inline-flex h-9 rounded-lg border border-line p-0.5"
-              >
-                {TASK_STATUSES.map((s) => (
-                  <button
-                    key={s.value}
-                    type="button"
-                    role="radio"
-                    aria-checked={props.status === s.value}
-                    onClick={() => {
-                      if (props.status === s.value) return;
-                      // Sluiten bij afronden: de taak verdwijnt dan uit de lijst met open taken
-                      if (s.value === "done") close();
-                      props.onStatusChange(s.value);
-                    }}
-                    className={`rounded-md px-2.5 text-sm ${
-                      props.status === s.value
-                        ? "bg-accent-soft font-medium text-accent"
-                        : "text-ink-2 hover:text-ink"
-                    }`}
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-              {!readOnly && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (props.onDelete()) close();
-                  }}
-                  aria-label="Taak verwijderen"
-                  className="grid h-9 w-9 place-items-center rounded-lg border border-line text-ink-3 hover:border-bad/40 hover:text-bad"
-                >
-                  <TrashIcon width={15} height={15} />
-                </button>
-              )}
-            </>
-          )}
-          <div className="ml-auto flex gap-2">
+        <div className="px-5 pt-5">
+          <div className="flex items-center justify-between gap-3">
+            <h2 id={headingId} className="text-sm font-medium text-ink-2">
+              {!task ? "Nieuwe taak" : readOnly ? `Taak van ${task.ownerName}` : "Taak bewerken"}
+            </h2>
             <button
               type="button"
               onClick={close}
-              className="h-9 rounded-lg px-3.5 text-sm text-ink-2 hover:bg-surface-2"
+              aria-label="Sluiten"
+              className="grid h-8 w-8 place-items-center rounded-md text-ink-3 hover:bg-surface-2 hover:text-ink"
             >
-              {readOnly ? "Sluiten" : "Annuleren"}
+              <CloseIcon width={17} height={17} />
             </button>
-            {!readOnly && (
-              <button
-                type="submit"
-                disabled={saving}
-                className="h-9 rounded-lg bg-ink px-4 text-sm font-medium text-surface hover:opacity-90 disabled:opacity-60"
+          </div>
+
+          {/* Alleen de eigenaar mag bewerken; de database dwingt dat ook af */}
+          <fieldset disabled={readOnly} className="min-w-0">
+            <textarea
+              name="title"
+              required
+              maxLength={200}
+              rows={1}
+              defaultValue={values.title}
+              placeholder="Wat moet er gebeuren?"
+              aria-label="Titel"
+              // Groeit mee met lange zinnen (field-sizing); Enter slaat op (geen regeleindes in titels)
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  e.currentTarget.form?.requestSubmit();
+                }
+              }}
+              className="mt-2 w-full resize-none rounded-lg bg-transparent text-xl font-semibold leading-snug outline-none [field-sizing:content] placeholder:text-ink-3"
+            />
+          </fieldset>
+        </div>
+
+        {/* Links de inhoud in losse blokken, rechts de gegevens; op mobiel onder elkaar */}
+        <div className="mt-3 grid border-t border-line md:grid-cols-[minmax(0,1fr)_16rem]">
+          <div className="min-w-0 space-y-4 p-5">
+            {/* Buiten de fieldset: een medewerker mag deeltaken afvinken. Slaat direct op. */}
+            {task ? (
+              <SubtaskList taskId={task.id} subtasks={task.subtasks} canEdit={!readOnly} />
+            ) : (
+              <section className={blockClass}>
+                <h3 className={blockHeadingClass}>Deeltaken</h3>
+                <p className="mt-1.5 text-sm text-ink-3">Deeltaken kun je toevoegen nadat de taak is opgeslagen.</p>
+              </section>
+            )}
+
+            <fieldset disabled={readOnly} className={`min-w-0 ${readOnly && !values.description ? "hidden" : ""}`}>
+              <label
+                className={`block ${blockClass} transition-shadow focus-within:border-accent focus-within:ring-4 focus-within:ring-accent-soft`}
               >
-                {saving ? "Opslaan…" : task ? "Opslaan" : "Toevoegen"}
-              </button>
+                <span className={blockHeadingClass}>Notitie</span>
+                <textarea
+                  name="description"
+                  maxLength={2000}
+                  rows={3}
+                  defaultValue={values.description}
+                  onKeyDown={listKeys}
+                  placeholder="Context, probleem, oplossing…"
+                  // Groeit en krimpt mee met de tekst (field-sizing); lange tekst scrolt
+                  className="mt-1.5 block max-h-[60vh] min-h-20 w-full resize-none bg-transparent text-sm leading-relaxed outline-none [field-sizing:content] placeholder:text-ink-3"
+                />
+              </label>
+            </fieldset>
+          </div>
+
+          <div className="space-y-4 border-t border-line bg-surface-2/40 p-5 md:border-t-0 md:border-l">
+            {props.mode === "edit" && (
+              <div className="space-y-1.5">
+                <span id={statusId} className="text-xs text-ink-3">
+                  Status
+                </span>
+                {/* Status staat los van het formulier en wordt direct opgeslagen */}
+                <div
+                  role="radiogroup"
+                  aria-labelledby={statusId}
+                  className="flex h-9 rounded-lg border border-line bg-surface p-0.5"
+                >
+                  {TASK_STATUSES.map((s) => (
+                    <button
+                      key={s.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={props.status === s.value}
+                      onClick={() => {
+                        if (props.status === s.value) return;
+                        // Sluiten bij afronden: de taak verdwijnt dan uit de lijst met open taken
+                        if (s.value === "done") close();
+                        props.onStatusChange(s.value);
+                      }}
+                      className={`flex-1 rounded-md px-1 text-sm ${
+                        props.status === s.value
+                          ? "bg-accent-soft font-medium text-accent"
+                          : "text-ink-2 hover:text-ink"
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+                {props.status === "done" && props.task.doneLabel && (
+                  <p className="flex items-center gap-1.5 pt-1 text-xs font-medium text-good">
+                    <CheckIcon width={13} height={13} strokeWidth={2.5} />
+                    Afgerond op {props.task.doneLabel}
+                  </p>
+                )}
+              </div>
+            )}
+
+            <fieldset disabled={readOnly} className="flex min-w-0 flex-col gap-3">
+              <ProjectSectionFields
+                projects={projects}
+                initialProjectId={values.projectId}
+                initialSection={
+                  task?.sectionId && task.section ? { id: task.sectionId, name: task.section } : null
+                }
+                foreignProjectName={task?.foreignProject?.name}
+              />
+              <label className="space-y-1.5">
+                <span className="text-xs text-ink-3">Datum</span>
+                <input type="date" name="due_date" defaultValue={values.dueDate} className={fieldClass} />
+              </label>
+              <label className="space-y-1.5">
+                <span className="text-xs text-ink-3">Tijd (optioneel)</span>
+                <input type="time" name="due_time" defaultValue={values.dueTime} className={fieldClass} />
+              </label>
+              <label className="space-y-1.5">
+                <span className="text-xs text-ink-3">Medewerker</span>
+                <select name="assignee_id" defaultValue={values.assigneeId} className={fieldClass}>
+                  <option value="">Niemand</option>
+                  {members.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {/* Gewone tekst, bijv. de mails waar de taak over gaat */}
+              <label className={`space-y-1.5 ${readOnly && !values.reference ? "hidden" : ""}`}>
+                <span className="text-xs text-ink-3">Referentie (optioneel)</span>
+                <input name="reference" maxLength={2000} defaultValue={values.reference} className={fieldClass} />
+              </label>
+            </fieldset>
+
+            {readOnly && (
+              <p className="text-xs text-ink-3">
+                Deze taak is aan jou toegewezen. Alleen {task.ownerName} kan hem bewerken; jij kunt de
+                status wijzigen en deeltaken afvinken.
+              </p>
             )}
           </div>
         </div>
 
-        {/* Onder de statusknoppen, met een dunne lijn ertussen */}
-        {props.mode === "edit" && props.status === "done" && props.task.doneLabel && (
-          <p className="mt-4 flex items-center gap-1.5 border-t border-line pt-3 text-sm font-medium text-good">
-            <CheckIcon width={15} height={15} strokeWidth={2.5} />
-            Afgerond op {props.task.doneLabel}
-          </p>
-        )}
+        <div className="border-t border-line px-5 py-3.5">
+          {error && <p className="mb-3 rounded-lg bg-bad/10 px-3 py-2 text-sm text-bad">{error}</p>}
+          <div className="flex items-center gap-2">
+            {props.mode === "edit" && !readOnly && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (props.onDelete()) close();
+                }}
+                aria-label="Taak verwijderen"
+                className="grid h-9 w-9 place-items-center rounded-lg border border-line text-ink-3 hover:border-bad/40 hover:text-bad"
+              >
+                <TrashIcon width={15} height={15} />
+              </button>
+            )}
+            <div className="ml-auto flex gap-2">
+              <button
+                type="button"
+                onClick={close}
+                className="h-9 rounded-lg px-3.5 text-sm text-ink-2 hover:bg-surface-2"
+              >
+                {readOnly ? "Sluiten" : "Annuleren"}
+              </button>
+              {!readOnly && (
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="h-9 rounded-lg bg-ink px-4 text-sm font-medium text-surface hover:opacity-90 disabled:opacity-60"
+                >
+                  {saving ? "Opslaan…" : task ? "Opslaan" : "Toevoegen"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </form>
     </dialog>
   );
