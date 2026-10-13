@@ -11,9 +11,10 @@ import { listKeys } from "./list-keys";
 import { SubtaskList } from "./subtask-list";
 import { useBackdropClose } from "./use-backdrop-close";
 
-/** Blok in de linkerkolom van de popup (deeltaken, notitie); zelfde stijl als in SubtaskList. */
-const blockClass = "rounded-xl border border-line bg-surface p-3.5";
-const blockHeadingClass = "text-xs font-medium text-ink-2";
+/** Wit blok met rand in de popup (deeltaken, notitie, gegevens); zelfde stijl als in SubtaskList. */
+const blockClass = "overflow-hidden rounded-xl border border-line bg-surface";
+/** Kopje bovenin een blok, met een lijn eronder. */
+const blockHeadingClass = "block border-b border-line px-3.5 pt-3.5 pb-2 text-xs font-medium text-ink-2";
 
 const fieldClass =
   "h-10 w-full min-w-0 rounded-lg border border-line bg-surface px-3 text-sm outline-none focus:border-accent focus:ring-4 focus:ring-accent-soft";
@@ -159,7 +160,7 @@ export function TaskDialog(props: CreateProps | EditProps) {
             ) : (
               <section className={blockClass}>
                 <h3 className={blockHeadingClass}>Deeltaken</h3>
-                <p className="mt-1.5 text-sm text-ink-3">Deeltaken kun je toevoegen nadat de taak is opgeslagen.</p>
+                <p className="px-3.5 py-3 text-sm text-ink-3">Deeltaken kun je toevoegen nadat de taak is opgeslagen.</p>
               </section>
             )}
 
@@ -176,96 +177,106 @@ export function TaskDialog(props: CreateProps | EditProps) {
                   onKeyDown={listKeys}
                   placeholder="Context, probleem, oplossing…"
                   // Groeit en krimpt mee met de tekst (field-sizing); lange tekst scrolt
-                  className="mt-1.5 block max-h-[60vh] min-h-20 w-full resize-none bg-transparent text-sm leading-relaxed outline-none [field-sizing:content] placeholder:text-ink-3"
+                  className="block max-h-[60vh] min-h-24 w-full resize-none bg-transparent px-3.5 py-3 text-sm leading-relaxed outline-none [field-sizing:content] placeholder:text-ink-3"
                 />
               </label>
             </fieldset>
           </div>
 
-          <div className="space-y-4 border-t border-line bg-surface-2/40 p-5 md:border-t-0 md:border-l">
-            {props.mode === "edit" && (
-              <div className="space-y-1.5">
-                <span id={statusId} className="text-xs text-ink-3">
-                  Status
-                </span>
-                {/* Status staat los van het formulier en wordt direct opgeslagen */}
-                <div
-                  role="radiogroup"
-                  aria-labelledby={statusId}
-                  className="flex h-9 rounded-lg border border-line bg-surface p-0.5"
-                >
-                  {TASK_STATUSES.map((s) => (
-                    <button
-                      key={s.value}
-                      type="button"
-                      role="radio"
-                      aria-checked={props.status === s.value}
-                      onClick={() => {
-                        if (props.status === s.value) return;
-                        // Sluiten bij afronden: de taak verdwijnt dan uit de lijst met open taken
-                        if (s.value === "done") close();
-                        props.onStatusChange(s.value);
-                      }}
-                      className={`flex-1 rounded-md px-1 text-sm ${
-                        props.status === s.value
-                          ? "bg-accent-soft font-medium text-accent"
-                          : "text-ink-2 hover:text-ink"
-                      }`}
-                    >
-                      {s.label}
-                    </button>
-                  ))}
+          {/* Gegevens in een eigen wit blok; op mobiel onder de inhoud */}
+          <div className="px-5 pb-5 md:pt-5 md:pl-0">
+            <div className={`${blockClass} space-y-4 p-3.5`}>
+              {props.mode === "edit" && (
+                <div className="space-y-1.5">
+                  <span id={statusId} className="text-xs text-ink-3">
+                    Status
+                  </span>
+                  {/* Status staat los van het formulier en wordt direct opgeslagen */}
+                  <div
+                    role="radiogroup"
+                    aria-labelledby={statusId}
+                    className="flex h-9 rounded-lg border border-line bg-surface p-0.5"
+                  >
+                    {TASK_STATUSES.map((s) => (
+                      <button
+                        key={s.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={props.status === s.value}
+                        onClick={() => {
+                          if (props.status === s.value) return;
+                          // Sluiten bij afronden: de taak verdwijnt dan uit de lijst met open taken
+                          if (s.value === "done") close();
+                          props.onStatusChange(s.value);
+                        }}
+                        className={`flex-1 rounded-md px-1 text-sm ${
+                          props.status === s.value
+                            ? "bg-accent-soft font-medium text-accent"
+                            : "text-ink-2 hover:text-ink"
+                        }`}
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                  {props.status === "done" && props.task.doneLabel && (
+                    <p className="flex items-center gap-1.5 pt-1 text-xs font-medium text-good">
+                      <CheckIcon width={13} height={13} strokeWidth={2.5} />
+                      Afgerond op {props.task.doneLabel}
+                    </p>
+                  )}
                 </div>
-                {props.status === "done" && props.task.doneLabel && (
-                  <p className="flex items-center gap-1.5 pt-1 text-xs font-medium text-good">
-                    <CheckIcon width={13} height={13} strokeWidth={2.5} />
-                    Afgerond op {props.task.doneLabel}
-                  </p>
-                )}
-              </div>
-            )}
+              )}
 
-            <fieldset disabled={readOnly} className="flex min-w-0 flex-col gap-3">
-              <ProjectSectionFields
-                projects={projects}
-                initialProjectId={values.projectId}
-                initialSection={
-                  task?.sectionId && task.section ? { id: task.sectionId, name: task.section } : null
-                }
-                foreignProjectName={task?.foreignProject?.name}
-              />
-              <label className="space-y-1.5">
-                <span className="text-xs text-ink-3">Datum</span>
-                <input type="date" name="due_date" defaultValue={values.dueDate} className={fieldClass} />
-              </label>
-              <label className="space-y-1.5">
-                <span className="text-xs text-ink-3">Tijd (optioneel)</span>
-                <input type="time" name="due_time" defaultValue={values.dueTime} className={fieldClass} />
-              </label>
-              <label className="space-y-1.5">
-                <span className="text-xs text-ink-3">Medewerker</span>
-                <select name="assignee_id" defaultValue={values.assigneeId} className={fieldClass}>
-                  <option value="">Niemand</option>
-                  {members.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              {/* Gewone tekst, bijv. de mails waar de taak over gaat */}
-              <label className={`space-y-1.5 ${readOnly && !values.reference ? "hidden" : ""}`}>
-                <span className="text-xs text-ink-3">Referentie (optioneel)</span>
-                <input name="reference" maxLength={2000} defaultValue={values.reference} className={fieldClass} />
-              </label>
-            </fieldset>
+              <fieldset disabled={readOnly} className="flex min-w-0 flex-col gap-3">
+                <ProjectSectionFields
+                  projects={projects}
+                  initialProjectId={values.projectId}
+                  initialSection={
+                    task?.sectionId && task.section ? { id: task.sectionId, name: task.section } : null
+                  }
+                  foreignProjectName={task?.foreignProject?.name}
+                />
+                <label className="space-y-1.5">
+                  <span className="text-xs text-ink-3">Datum</span>
+                  <input type="date" name="due_date" defaultValue={values.dueDate} className={fieldClass} />
+                </label>
+                <label className="space-y-1.5">
+                  <span className="text-xs text-ink-3">Tijd (optioneel)</span>
+                  <input type="time" name="due_time" defaultValue={values.dueTime} className={fieldClass} />
+                </label>
+                <label className="space-y-1.5">
+                  <span className="text-xs text-ink-3">Medewerker</span>
+                  <select name="assignee_id" defaultValue={values.assigneeId} className={fieldClass}>
+                    <option value="">Niemand</option>
+                    {members.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {/* Gewone tekst, bijv. de mails waar de taak over gaat */}
+                <label className={`space-y-1.5 ${readOnly && !values.reference ? "hidden" : ""}`}>
+                  <span className="text-xs text-ink-3">Referentie (optioneel)</span>
+                  {/* Meerdere regels: een mail per regel; groeit mee met de tekst */}
+                  <textarea
+                    name="reference"
+                    maxLength={2000}
+                    rows={2}
+                    defaultValue={values.reference}
+                    className="block max-h-60 min-h-16 w-full min-w-0 resize-none rounded-lg border border-line bg-surface px-3 py-2 text-sm leading-relaxed outline-none [field-sizing:content] focus:border-accent focus:ring-4 focus:ring-accent-soft"
+                  />
+                </label>
+              </fieldset>
 
-            {readOnly && (
-              <p className="text-xs text-ink-3">
-                Deze taak is aan jou toegewezen. Alleen {task.ownerName} kan hem bewerken; jij kunt de
-                status wijzigen en deeltaken afvinken.
-              </p>
-            )}
+              {readOnly && (
+                <p className="text-xs text-ink-3">
+                  Deze taak is aan jou toegewezen. Alleen {task.ownerName} kan hem bewerken; jij kunt de
+                  status wijzigen en deeltaken afvinken.
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
