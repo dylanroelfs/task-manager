@@ -60,3 +60,5 @@ Er zijn geen tests. Controleer wijzigingen met `npm run lint` en `npm run build`
 - `.env.local` met `NEXT_PUBLIC_SUPABASE_URL` en `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
   (zie `.env.example`). Nooit de service_role/secret key gebruiken.
 - `.claude/` en `.mcp.json` zijn afgeschermd voor bewerken door Claude.
+- Gehost op Vercel. Functies draaien in `dub1` (Ierland, `vercel.json`), naast de Supabase-database
+  in `eu-west-1`; een andere regio maakt elke pagina merkbaar trager.
