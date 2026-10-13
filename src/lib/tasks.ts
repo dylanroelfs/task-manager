@@ -13,6 +13,8 @@ export type TaskItemData = {
   title: string;
   description: string | null;
   reference: string | null;
+  /** Afvinklijst binnen de taak, op volgorde van toevoegen. */
+  subtasks: Subtask[];
   sectionId: string | null;
   /** Naam van het onderdeel, bijv. "AVN-1" of "Bugfix". */
   section: string | null;
@@ -46,6 +48,8 @@ export type Project = {
 
 export type Section = { id: string; name: string };
 
+export type Subtask = { id: string; title: string; done: boolean };
+
 export type Member = { id: string; name: string; email: string; initials: string };
 
 export const TIME_ZONE = "Europe/Amsterdam";
@@ -68,8 +72,10 @@ export async function getTasks(
   let query = supabase
     .from("tasks")
     .select(
-      "id, title, description, reference, section_id, status, done, due_date, due_time, completed_at, project_id, assignee_id, user_id",
-    );
+      "id, title, description, reference, section_id, status, done, due_date, due_time, completed_at, project_id, assignee_id, user_id, subtasks(id, title, done)",
+    )
+    // Deeltaken in dezelfde query, op volgorde van toevoegen
+    .order("created_at", { referencedTable: "subtasks", ascending: true });
   if (projectId) query = query.eq("project_id", projectId);
   if (assigneeId) query = query.eq("assignee_id", assigneeId);
   query =
@@ -103,6 +109,7 @@ export async function getTasks(
     title: t.title,
     description: t.description,
     reference: t.reference,
+    subtasks: t.subtasks,
     sectionId: t.section_id,
     section: sections.find((s) => s.id === t.section_id)?.name ?? null,
     status: t.status,

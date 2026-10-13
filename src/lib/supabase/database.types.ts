@@ -76,6 +76,22 @@ export type Database = {
         Update: { name?: string };
         Relationships: [];
       };
+      subtasks: {
+        Row: { id: string; task_id: string; title: string; done: boolean; created_at: string };
+        Insert: { id?: string; task_id: string; title: string; done?: boolean; created_at?: string };
+        // Een deeltaak verhuist niet naar een andere taak (trigger)
+        Update: { title?: string; done?: boolean };
+        // Nodig om deeltaken mee te laden met een taak: tasks.select("…, subtasks(…)")
+        Relationships: [
+          {
+            foreignKeyName: "subtasks_task_id_fkey";
+            columns: ["task_id"];
+            isOneToOne: false;
+            referencedRelation: "tasks";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       notes: {
         Row: {
           id: string;

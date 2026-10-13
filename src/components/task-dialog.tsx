@@ -8,6 +8,7 @@ import { TASK_STATUSES } from "@/lib/task-status";
 import type { Member, Project, Section, TaskItemData } from "@/lib/tasks";
 import { CheckIcon, CloseIcon, TrashIcon } from "./icons";
 import { listKeys } from "./list-keys";
+import { SubtaskList } from "./subtask-list";
 import { useBackdropClose } from "./use-backdrop-close";
 
 const fieldClass =
@@ -147,7 +148,16 @@ export function TaskDialog(props: CreateProps | EditProps) {
             <span className="text-xs text-ink-3">Referentie (optioneel)</span>
             <input name="reference" maxLength={2000} defaultValue={values.reference} className={fieldClass} />
           </label>
+        </fieldset>
 
+        {/* Buiten de fieldset: een medewerker mag deeltaken afvinken. Slaat direct op. */}
+        {task ? (
+          <SubtaskList taskId={task.id} subtasks={task.subtasks} canEdit={!readOnly} />
+        ) : (
+          <p className="mt-3 text-xs text-ink-3">Deeltaken kun je toevoegen nadat de taak is opgeslagen.</p>
+        )}
+
+        <fieldset disabled={readOnly} className="min-w-0">
           <label className={`mt-3 block space-y-1.5 ${readOnly && !values.description ? "hidden" : ""}`}>
             <span className="text-xs text-ink-3">Notitie</span>
             <textarea

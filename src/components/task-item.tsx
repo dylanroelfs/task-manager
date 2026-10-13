@@ -5,7 +5,7 @@ import { deleteTask, setTaskStatus } from "@/lib/actions/tasks";
 import { listLine } from "@/lib/note-text";
 import type { TaskStatus } from "@/lib/supabase/database.types";
 import type { Member, Project, TaskItemData } from "@/lib/tasks";
-import { CalendarIcon, CheckIcon } from "./icons";
+import { CalendarIcon, CheckCircleIcon, CheckIcon } from "./icons";
 import { ProjectDot } from "./project-dot";
 import { TaskDialog } from "./task-dialog";
 
@@ -104,7 +104,7 @@ export function TaskItem({
           )}
         </div>
 
-        {/* Tags: project, onderdeel, ingestelde datum (afronddatum staat in de tooltip) */}
+        {/* Tags: project, onderdeel, deeltaken, ingestelde datum (afronddatum staat in de tooltip) */}
         <div className="flex flex-wrap items-center gap-1.5 sm:shrink-0 sm:justify-end">
           {project && (
             <span className={tagClass}>
@@ -115,6 +115,12 @@ export function TaskItem({
           {task.section && (
             <span className={tagClass}>
               <span className="truncate">{task.section}</span>
+            </span>
+          )}
+          {task.subtasks.length > 0 && (
+            <span className={`${tagClass} tabular-nums`} title="Deeltaken afgerond">
+              <CheckCircleIcon width={12} height={12} />
+              {task.subtasks.filter((s) => s.done).length}/{task.subtasks.length}
             </span>
           )}
           {task.dueLabel && (
