@@ -128,18 +128,18 @@ export function TaskDialog(props: CreateProps | EditProps) {
             name="title"
             required
             maxLength={200}
-            rows={2}
+            rows={1}
             defaultValue={values.title}
             placeholder="Wat moet er gebeuren?"
             aria-label="Titel"
-            // Lange zinnen lopen door op meerdere regels; Enter slaat op (geen regeleindes in titels)
+            // Groeit mee met lange zinnen (field-sizing); Enter slaat op (geen regeleindes in titels)
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
                 e.currentTarget.form?.requestSubmit();
               }
             }}
-            className="mt-3 w-full resize-none rounded-lg bg-transparent text-lg font-medium leading-snug outline-none placeholder:text-ink-3"
+            className="mt-3 w-full resize-none rounded-lg bg-transparent text-lg font-medium leading-snug outline-none [field-sizing:content] placeholder:text-ink-3"
           />
 
           {/* Gewone tekst, bijv. de mails waar de taak over gaat */}
