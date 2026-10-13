@@ -52,7 +52,7 @@ export function TaskDialog(props: CreateProps | EditProps) {
           title: props.task.title,
           // Oude beschrijvingen met "- " of "* " meteen als bolletjes tonen
           description: withBullets(props.task.description ?? ""),
-          reference: props.task.reference ?? "",
+          reference: withBullets(props.task.reference ?? ""),
           projectId: props.projectId ?? "",
           sectionId: props.task.sectionId ?? "",
           dueDate: props.task.dueDate ?? "",
@@ -259,12 +259,13 @@ export function TaskDialog(props: CreateProps | EditProps) {
                 {/* Gewone tekst, bijv. de mails waar de taak over gaat */}
                 <label className={`space-y-1.5 ${readOnly && !values.reference ? "hidden" : ""}`}>
                   <span className="text-xs text-ink-3">Referentie (optioneel)</span>
-                  {/* Meerdere regels: een mail per regel; groeit mee met de tekst */}
+                  {/* Meerdere regels, ook als lijst (zoals Notitie); groeit mee met de tekst */}
                   <textarea
                     name="reference"
                     maxLength={2000}
                     rows={2}
                     defaultValue={values.reference}
+                    onKeyDown={listKeys}
                     className="block max-h-60 min-h-16 w-full min-w-0 resize-none rounded-lg border border-line bg-surface px-3 py-2 text-sm leading-relaxed outline-none [field-sizing:content] focus:border-accent focus:ring-4 focus:ring-accent-soft"
                   />
                 </label>
