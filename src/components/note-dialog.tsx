@@ -208,12 +208,13 @@ export function NoteDialog(props: CreateProps | EditProps) {
           <textarea
             name="body"
             maxLength={10000}
-            rows={12}
+            rows={6}
             defaultValue={values.body}
             onKeyDown={listKeys}
             placeholder="Schrijf je notitie…"
             aria-label="Notitie"
-            className="mt-2 w-full resize-y rounded-lg bg-surface-2/60 px-3 py-2.5 text-sm leading-relaxed outline-none placeholder:text-ink-3 focus:ring-4 focus:ring-accent-soft"
+            // Groeit en krimpt mee met de tekst (field-sizing); lange tekst scrolt
+            className="mt-2 max-h-[60vh] min-h-40 w-full resize-none rounded-lg [field-sizing:content] bg-surface-2/60 px-3 py-2.5 text-sm leading-relaxed outline-none placeholder:text-ink-3 focus:ring-4 focus:ring-accent-soft"
           />
 
           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">

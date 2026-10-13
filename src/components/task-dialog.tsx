@@ -163,10 +163,11 @@ export function TaskDialog(props: CreateProps | EditProps) {
             <textarea
               name="description"
               maxLength={2000}
-              rows={6}
+              rows={3}
               defaultValue={values.description}
               onKeyDown={listKeys}
-              className="w-full resize-y rounded-lg bg-surface-2/60 px-3 py-2.5 text-sm leading-relaxed outline-none focus:ring-4 focus:ring-accent-soft"
+              // Groeit en krimpt mee met de tekst (field-sizing); lange tekst scrolt
+              className="max-h-[60vh] min-h-24 w-full resize-none rounded-lg [field-sizing:content] bg-surface-2/60 px-3 py-2.5 text-sm leading-relaxed outline-none focus:ring-4 focus:ring-accent-soft"
             />
           </label>
 
