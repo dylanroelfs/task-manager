@@ -46,6 +46,7 @@ export function TaskDialog(props: CreateProps | EditProps) {
           title: props.task.title,
           // Oude beschrijvingen met "- " of "* " meteen als bolletjes tonen
           description: withBullets(props.task.description ?? ""),
+          reference: props.task.reference ?? "",
           projectId: props.projectId ?? "",
           sectionId: props.task.sectionId ?? "",
           dueDate: props.task.dueDate ?? "",
@@ -55,6 +56,7 @@ export function TaskDialog(props: CreateProps | EditProps) {
       : {
           title: "",
           description: "",
+          reference: "",
           projectId: props.defaults.projectId ?? "",
           sectionId: "",
           dueDate: props.defaults.dueDate,
@@ -150,6 +152,19 @@ export function TaskDialog(props: CreateProps | EditProps) {
             aria-label="Beschrijving"
             className={`mt-2 w-full resize-y rounded-lg bg-surface-2/60 px-3 py-2.5 text-sm leading-relaxed outline-none placeholder:text-ink-3 focus:ring-4 focus:ring-accent-soft ${
               readOnly && !values.description ? "hidden" : ""
+            }`}
+          />
+
+          {/* Gewone tekst, bijv. de mails waar de taak over gaat */}
+          <textarea
+            name="reference"
+            maxLength={2000}
+            rows={3}
+            defaultValue={values.reference}
+            placeholder="Referentie (optioneel)"
+            aria-label="Referentie"
+            className={`mt-2 w-full resize-y rounded-lg bg-surface-2/60 px-3 py-2.5 text-sm leading-relaxed outline-none placeholder:text-ink-3 focus:ring-4 focus:ring-accent-soft ${
+              readOnly && !values.reference ? "hidden" : ""
             }`}
           />
 

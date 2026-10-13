@@ -17,6 +17,8 @@ export type Database = {
           assignee_id: string | null;
           title: string;
           description: string | null;
+          /** Referentie, bijv. de mails waar de taak over gaat (gewone tekst). */
+          reference: string | null;
           /** Onderdeel binnen het project (sections), hoort bij hetzelfde project. */
           section_id: string | null;
           due_date: string | null;
@@ -35,6 +37,7 @@ export type Database = {
           assignee_id?: string | null;
           title: string;
           description?: string | null;
+          reference?: string | null;
           section_id?: string | null;
           due_date?: string | null;
           due_time?: string | null;
@@ -46,6 +49,7 @@ export type Database = {
           assignee_id?: string | null;
           title?: string;
           description?: string | null;
+          reference?: string | null;
           section_id?: string | null;
           due_date?: string | null;
           due_time?: string | null;

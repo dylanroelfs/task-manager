@@ -12,6 +12,7 @@ export type TaskItemData = {
   id: string;
   title: string;
   description: string | null;
+  reference: string | null;
   sectionId: string | null;
   /** Naam van het onderdeel, bijv. "AVN-1" of "Bugfix". */
   section: string | null;
@@ -67,7 +68,7 @@ export async function getTasks(
   let query = supabase
     .from("tasks")
     .select(
-      "id, title, description, section_id, status, done, due_date, due_time, completed_at, project_id, assignee_id, user_id",
+      "id, title, description, reference, section_id, status, done, due_date, due_time, completed_at, project_id, assignee_id, user_id",
     );
   if (projectId) query = query.eq("project_id", projectId);
   if (assigneeId) query = query.eq("assignee_id", assigneeId);
@@ -101,6 +102,7 @@ export async function getTasks(
     id: t.id,
     title: t.title,
     description: t.description,
+    reference: t.reference,
     sectionId: t.section_id,
     section: sections.find((s) => s.id === t.section_id)?.name ?? null,
     status: t.status,

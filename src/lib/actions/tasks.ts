@@ -10,6 +10,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 type TaskFields = {
   title: string;
   description?: string | null;
+  reference?: string | null;
   section_id: string | null;
   due_date: string | null;
   due_time: string | null;
@@ -44,6 +45,11 @@ function parseTaskFields(formData: FormData): TaskFields | string {
     const description = String(formData.get("description") ?? "").trim();
     if (description.length > 2000) return "De beschrijving mag maximaal 2000 tekens zijn.";
     fields.description = description || null;
+  }
+  if (formData.has("reference")) {
+    const reference = String(formData.get("reference") ?? "").trim();
+    if (reference.length > 2000) return "De referentie mag maximaal 2000 tekens zijn.";
+    fields.reference = reference || null;
   }
   // Alleen meenemen als het formulier een medewerker-veld heeft
   if (formData.has("assignee_id")) {

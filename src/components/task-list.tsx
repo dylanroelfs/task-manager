@@ -6,11 +6,11 @@ import { inProject, ProjectFilter, projectOptions } from "./project-filter";
 import { normalize, ResultCount, SearchInput, searchWords } from "./search-input";
 import { TaskItem } from "./task-item";
 
-/** Elk zoekwoord komt voor in de titel, beschrijving, het project, onderdeel of de datum. */
+/** Elk zoekwoord komt voor in de titel, beschrijving, referentie, het project, onderdeel of de datum. */
 export function taskMatches(task: TaskItemData, projects: Project[], words: string[]) {
   const project = projects.find((p) => p.id === task.projectId)?.name ?? task.foreignProject?.name;
   const haystack = normalize(
-    [task.title, task.description, project, task.section, task.dueLabel, task.doneLabel].join(" "),
+    [task.title, task.description, task.reference, project, task.section, task.dueLabel, task.doneLabel].join(" "),
   );
   return words.every((w) => haystack.includes(w));
 }
