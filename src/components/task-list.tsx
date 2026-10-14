@@ -19,16 +19,19 @@ export function TaskList({
   tasks,
   projects,
   members,
+  inProject = false,
 }: {
   tasks: TaskItemData[];
   projects: Project[];
   members: Member[];
+  /** Op de projectpagina: geen tags voor project en onderdeel. */
+  inProject?: boolean;
 }) {
   return (
     <div className="card overflow-hidden">
       <ul className="divide-y divide-line">
         {tasks.map((task) => (
-          <TaskItem key={task.id} task={task} projects={projects} members={members} />
+          <TaskItem key={task.id} task={task} projects={projects} members={members} inProject={inProject} />
         ))}
       </ul>
     </div>

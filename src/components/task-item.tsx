@@ -25,10 +25,13 @@ export function TaskItem({
   task,
   projects,
   members,
+  inProject = false,
 }: {
   task: TaskItemData;
   projects: Project[];
   members: Member[];
+  /** Op de projectpagina: project en onderdeel staan al in de pagina, dus geen tags daarvoor. */
+  inProject?: boolean;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [pending, startTransition] = useTransition();
@@ -86,17 +89,25 @@ export function TaskItem({
       {/* Mobiel: tags onder de titel; vanaf sm ernaast */}
       <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
         <div className="min-w-0 sm:flex-1">
-          <button
-            type="button"
-            onClick={() => dialogRef.current?.showModal()}
-            title="Taak openen"
-            className={`line-clamp-2 w-full rounded text-left text-sm outline-none sm:block sm:truncate hover:text-accent focus-visible:ring-2 focus-visible:ring-accent-soft ${
-              done ? "text-ink-3 line-through" : ""
-            }`}
-          >
-            {task.title}
-            {!task.isOwner && <span className="ml-2 text-xs text-ink-3">van {task.ownerName}</span>}
-          </button>
+          {/* Titel met daarachter "Bezig"; de tag blijft staan als een lange titel wordt afgekapt */}
+          <div className="flex items-start gap-2 sm:items-center">
+            <button
+              type="button"
+              onClick={() => dialogRef.current?.showModal()}
+              title="Taak openen"
+              className={`line-clamp-2 min-w-0 rounded text-left text-sm outline-none sm:block sm:truncate hover:text-accent focus-visible:ring-2 focus-visible:ring-accent-soft ${
+                done ? "text-ink-3 line-through" : ""
+              }`}
+            >
+              {task.title}
+              {!task.isOwner && <span className="ml-2 text-xs text-ink-3">van {task.ownerName}</span>}
+            </button>
+            {status === "in_progress" && (
+              <span className={tagClass}>
+                Bezig
+              </span>
+            )}
+          </div>
 
           {/* Voorproefje; de volledige beschrijving staat in de popup */}
           {description && (
@@ -106,16 +117,15 @@ export function TaskItem({
 
         {/* Tags: project, onderdeel, deeltaken, ingestelde datum (afronddatum staat in de tooltip) */}
         <div className="flex flex-wrap items-center gap-1.5 sm:shrink-0 sm:justify-end">
-          {project && (
+          {project && !inProject && (
             <span className={tagClass}>
               <ProjectDot color={project.color} size={7} />
               <span className="truncate">{project.name}</span>
             </span>
           )}
-          {task.section && (
-            <span className={tagClass}>
-              <span className="truncate">{task.section}</span>
-            </span>
+          {/* Onderdeel voluit, ook als hij lang is */}
+          {task.section && !inProject && (
+            <span className={`${tagClass} max-w-full! shrink!`}>{task.section}</span>
           )}
           {task.subtasks.length > 0 && (
             <span className={`${tagClass} tabular-nums`} title="Deeltaken afgerond">

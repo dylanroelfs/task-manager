@@ -125,10 +125,12 @@ export async function TasksView({
             <section key={part.key} className="space-y-2">
               <h2 className="flex items-center gap-2 px-1 text-sm font-medium text-ink-2">
                 {part.name || "Overig"}
-                <span className="text-ink-3">{part.tasks.filter((t) => !t.done).length}</span>
+                <span className="min-w-5 rounded-full bg-surface-2 px-1.5 py-px text-center text-[11px] font-medium tabular-nums text-ink-2 ring-1 ring-inset ring-line">
+                  {part.tasks.filter((t) => !t.done).length}
+                </span>
               </h2>
               {part.tasks.length ? (
-                <TaskList tasks={part.tasks} projects={projects} members={members} />
+                <TaskList tasks={part.tasks} projects={projects} members={members} inProject />
               ) : (
                 <p className="rounded-2xl border border-dashed border-line px-4 py-4 text-center text-xs text-ink-3">
                   Nog geen taken in dit onderdeel.
@@ -162,7 +164,7 @@ export async function TasksView({
             <p className="px-4 py-12 text-center text-sm text-ink-3">{empty}</p>
           </section>
         ) : (
-          <TaskList tasks={tasks} projects={projects} members={members} />
+          <TaskList tasks={tasks} projects={projects} members={members} inProject />
         )}
       </main>
     </>
